@@ -17,8 +17,8 @@ function run_newcat_normseg(base_dir)
         mkdir(newdir);
     end
 
-    % Find the T1w image
-    t1wfiles = dir(fullfile([base_dir, '/nifti/'], '3*-tfl3d116ns.nii'));
+    % Find the T1w image % tfl3d116ns.nii.gz
+    t1wfiles = dir(fullfile([base_dir, '/nifti/'], '3*-tfl3d116ns.nii*'));
     if isempty(t1wfiles)
         error('No T1w image found');
     end

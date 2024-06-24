@@ -8,7 +8,8 @@ function [noddiFiles, success] = getNODDIFiles(inputDataFolder)
     
     % Check if the NODDI folder exists
     if ~isfolder(noddiFolderPath)
-        error('NODDI folder not found');
+        disp('NODDI folder not found');
+        noddiFiles=[];
         success = false;
         return;
     end
@@ -17,7 +18,8 @@ function [noddiFiles, success] = getNODDIFiles(inputDataFolder)
     noddiFilesList = dir(fullfile(noddiFolderPath, '3*-NODDI_*.nii'));
     
     if isempty(noddiFilesList)
-        error('NODDI files not found');
+        disp('NODDI files not found');
+        noddiFiles=[];
         success = false;
         return;
     end

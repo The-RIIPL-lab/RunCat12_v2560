@@ -8,15 +8,28 @@ function [dtiFiles, success] = getDTIFiles(inputDataFolder)
     
     % Check if the DTI folder exists
     if ~isfolder(dtiFolderPath)
-        error('DTI folder not found');
-        success = false;
-        return;
+        disp('DTI folder not found');
+        
+        % Check for a folder that matches the pattern DTI_S####
+        dtiPatternPath = fullfile(inputDataFolder, 'DTI_S*');
+        dtiPatternFiles = dir(dtiPatternPath);
+        
+        if isempty(dtiPatternFiles)
+            disp('No DTI_S#### folder found');
+            dtiFiles=[];
+            success = false;
+            return;
+        else
+            dtiFolderPath = fullfile(inputDataFolder, dtiPatternFiles(1).name);
+            disp(['Using ', dtiFolderPath, ' as DTI folder']);
+        end
     end
     
     % Find the S0 file
     s0Files = dir(fullfile(dtiFolderPath, '3*_ECC_S0.nii'));
     if isempty(s0Files)
-        error('S0 file not found');
+        disp('S0 file not found');
+        dtiFiles=[];
         success = false;
         return;
     end

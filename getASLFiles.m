@@ -9,7 +9,8 @@ function [aslFiles, success] = getASLFiles(inputDataFolder)
     
     % Check if any ASL folder exists
     if isempty(aslFolderPaths)
-        error('No ASL folder found');
+        disp('No ASL folder found');
+        aslFiles = [];
         success = false;
         return;
     end
@@ -21,7 +22,8 @@ function [aslFiles, success] = getASLFiles(inputDataFolder)
         % Find the M0_masked file
         m0Files = dir(fullfile(aslFolderPath, '3*_M0_masked.nii'));
         if isempty(m0Files)
-            error(['M0_masked file not found in ' aslFolderPath]);
+            disp(['M0_masked file not found in ' aslFolderPath]);
+            aslFiles = [];
             success = false;
             return;
         end

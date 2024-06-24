@@ -1,0 +1,44 @@
+MATLAB is selecting SOFTWARE OPENGL rendering.
+
+                            < M A T L A B (R) >
+                  Copyright 1984-2023 The MathWorks, Inc.
+             R2023b Update 4 (23.2.0.2428915) 64-bit (glnxa64)
+                              October 23, 2023
+
+ 
+To get started, type doc.
+For product information, visit www.mathworks.com.
+ 
+Subject dir /isilon/datalake/riipl/original/ADPPR/3ADSP0731_125_00_20150507
+MRI dir /isilon/datalake/riipl/original/ADPPR/3ADSP0731_125_00_20150507/nifti/cat12_v2560/mri
+Input T1 /isilon/datalake/riipl/original/ADPPR/3ADSP0731_125_00_20150507/nifti/cat12_v2560/3ADSP0731125300089-0003-001-0001-0192-tfl3d116ns.nii.gz
+No ASL folder found
+DTI folder not found
+Using /isilon/datalake/riipl/original/ADPPR/3ADSP0731_125_00_20150507/DTI_S0007 as DTI folder
+NODDI folder not found
+File matching the pattern "y_*-tfl3d116ns.nii" is present in the mri folder.
+
+
+------------------------------------------------------------------------
+24-Jun-2024 13:25:48 - Running job #1
+------------------------------------------------------------------------
+24-Jun-2024 13:25:48 - Running 'Deformations'
+24-Jun-2024 13:25:50 - Done    'Deformations'
+24-Jun-2024 13:25:50 - Running 'Deformations'
+24-Jun-2024 13:25:51 - Done    'Deformations'
+24-Jun-2024 13:25:51 - Running 'Deformations'
+24-Jun-2024 13:25:53 - Done    'Deformations'
+24-Jun-2024 13:25:53 - Running 'Deformations'
+24-Jun-2024 13:25:54 - Done    'Deformations'
+24-Jun-2024 13:25:54 - Running 'Deformations'
+24-Jun-2024 13:25:55 - Done    'Deformations'
+24-Jun-2024 13:25:55 - Running 'Deformations'
+24-Jun-2024 13:25:56 - Done    'Deformations'
+24-Jun-2024 13:25:56 - Running 'Deformations'
+24-Jun-2024 13:25:58 - Done    'Deformations'
+24-Jun-2024 13:25:58 - Running 'Deformations'
+24-Jun-2024 13:25:59 - Done    'Deformations'
+24-Jun-2024 13:25:59 - Running 'Deformations'
+24-Jun-2024 13:26:03 - Done    'Deformations'
+24-Jun-2024 13:26:03 - Done
+
