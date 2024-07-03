@@ -25,5 +25,6 @@ cat << EOF > jobs/${base_name}.sbatch
 #SBATCH -p defq
 #SBATCH -A ansir-users
 module load matlab
+cd /isilon/datalake/riipl/scratch/ADRC/Hellcat-12.9/
 matlab -r "run_new_cat_normseg('$1'); exit;"
 EOF

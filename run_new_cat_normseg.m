@@ -33,7 +33,7 @@ function run_newcat_normseg(base_dir)
 
     disp(sprintf("Subject dir %s", base_dir));
     disp(sprintf("MRI dir %s", mri_dir));
-    disp(sprintf("Input T1 %s", fullfile(newdir, t1wfiles(1).name)));
+    disp(sprintf("Input T1 %s", fullfile(newdir, t1wfiles(end).name)));
 
     [asl_struct, ~] = getASLFiles(base_dir);
     [dti_struct, ~] = getDTIFiles(base_dir);
@@ -48,7 +48,7 @@ function run_newcat_normseg(base_dir)
         spm('defaults', 'FMRI');
         spm_jobman('initcfg');
 
-        matlabbatch{1}.spm.tools.cat.estwrite.data = {fullfile(newdir, t1wfiles(1).name)};
+        matlabbatch{1}.spm.tools.cat.estwrite.data = {fullfile(newdir, t1wfiles(end).name)};
         matlabbatch{1}.spm.tools.cat.estwrite.data_wmh = {''};
         matlabbatch{1}.spm.tools.cat.estwrite.nproc = 8;
         matlabbatch{1}.spm.tools.cat.estwrite.useprior = '';
@@ -70,10 +70,11 @@ function run_newcat_normseg(base_dir)
         matlabbatch{1}.spm.tools.cat.estwrite.extopts.SRP = 22;
         matlabbatch{1}.spm.tools.cat.estwrite.extopts.ignoreErrors = 1;
         matlabbatch{1}.spm.tools.cat.estwrite.output.BIDS.BIDSno = 1;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.surface = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.surf_measures = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.neuromorphometrics = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.lpba40 = 0;
+        matlabbatch{1}.spm.tools.cat.estwrite.output.surface = 1;
+        matlabbatch{1}.spm.tools.cat.estwrite.output.surf_measures = 1;
+        matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.neuromorphometrics = 1;
+        matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.lpba40 = 1;
+        matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.aal3 = 1;
         matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.cobra = 0;
         matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.hammers = 0;
         matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.thalamus = 0;
