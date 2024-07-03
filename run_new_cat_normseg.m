@@ -8,9 +8,6 @@ function run_newcat_normseg(base_dir)
     label_map_path='/isilon/datalake/riipl/scratch/ADRC/Hellcat-12.9/libs/spm12/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/';
     label_maps_files = {'neuromorphometrics.nii','aal3.nii','cobra.nii','hammers.nii','lpba40.nii','ibsr.nii','JHU.nii','brainmask_T1.nii'};
 
-    % Define the base directory of test subject
-    %base_dir = '/isilon/datalake/riipl/scratch/ADRC/Hellcat-12.9/testdata/3MCJO002401_125300350_20231002/';
-
     % Create the new directory
     newdir = fullfile(base_dir, 'nifti', 'cat12_v2560');
     if ~exist(newdir, 'dir')
