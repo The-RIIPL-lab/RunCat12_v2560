@@ -45,8 +45,8 @@ function run_newcat_normseg(base_dir)
         spm('defaults', 'FMRI');
         spm_jobman('initcfg');
 
-        matlabbatch{1}.spm.tools.cat.estwrite.data = {fullfile(newdir, t1wfiles(end).name)};
-        matlabbatch{1}.spm.tools.cat.estwrite.data_wmh = {''};
+        matlabbatch{1}.spm.tools.cat.estwrite.data = {fullfile(newdir, t1wfiles(end).name) };
+        %matlabbatch{1}.spm.tools.cat.estwrite.data_wmh = {''};
         matlabbatch{1}.spm.tools.cat.estwrite.nproc = 8;
         matlabbatch{1}.spm.tools.cat.estwrite.useprior = '';
         matlabbatch{1}.spm.tools.cat.estwrite.opts.tpm = {'/isilon/datalake/riipl/scratch/ADRC/Hellcat-12.9/libs/spm12/spm12/tpm/TPM.nii'};
@@ -67,25 +67,24 @@ function run_newcat_normseg(base_dir)
         matlabbatch{1}.spm.tools.cat.estwrite.extopts.SRP = 22;
         matlabbatch{1}.spm.tools.cat.estwrite.extopts.ignoreErrors = 1;
         matlabbatch{1}.spm.tools.cat.estwrite.output.BIDS.BIDSno = 1;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.surface = 1;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.surf_measures = 1;
+        matlabbatch{1}.spm.tools.cat.estwrite.output.surface = 0;
+        matlabbatch{1}.spm.tools.cat.estwrite.output.surf_measures = 0;
         matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.neuromorphometrics = 1;
         matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.lpba40 = 1;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.aal3 = 1;
         matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.cobra = 0;
         matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.hammers = 0;
         matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.thalamus = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.thalamic_nuclei = 0;
+        matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.thalamic_nuclei = 0;   
         matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.suit = 0;
         matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.ibsr = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.ownatlas = {''};
+        %matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.ownatlas = {''};
         matlabbatch{1}.spm.tools.cat.estwrite.output.GM.native = 1;
         matlabbatch{1}.spm.tools.cat.estwrite.output.GM.mod = 0;
         matlabbatch{1}.spm.tools.cat.estwrite.output.GM.dartel = 0;
         matlabbatch{1}.spm.tools.cat.estwrite.output.WM.native = 1;
         matlabbatch{1}.spm.tools.cat.estwrite.output.WM.mod = 0;
         matlabbatch{1}.spm.tools.cat.estwrite.output.WM.dartel = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.native = 0;
+        matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.native = 1;
         matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.warped = 0;
         matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.mod = 0;
         matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.dartel = 0;
@@ -107,7 +106,7 @@ function run_newcat_normseg(base_dir)
         matlabbatch{1}.spm.tools.cat.estwrite.output.TPMC.warped = 0;
         matlabbatch{1}.spm.tools.cat.estwrite.output.TPMC.mod = 0;
         matlabbatch{1}.spm.tools.cat.estwrite.output.TPMC.dartel = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.atlas.native = 1;
+        matlabbatch{1}.spm.tools.cat.estwrite.output.atlas.native = 0;
         matlabbatch{1}.spm.tools.cat.estwrite.output.label.native = 1;
         matlabbatch{1}.spm.tools.cat.estwrite.output.label.warped = 0;
         matlabbatch{1}.spm.tools.cat.estwrite.output.label.dartel = 0;
@@ -129,6 +128,7 @@ function run_newcat_normseg(base_dir)
         i=2;
     end
 
+    sprintf(" - Create Task number %i", i );
     if ~isempty(iy_files)
         matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(iy_files(1).folder, iy_files(1).name)};
     else
@@ -142,6 +142,7 @@ function run_newcat_normseg(base_dir)
     matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
     i=i+1;
 
+    sprintf(" - Create Task number %i", i );
     if ~isempty(iy_files)
         matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(iy_files(1).folder, iy_files(1).name)};
     else
@@ -155,6 +156,7 @@ function run_newcat_normseg(base_dir)
     matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
     i=i+1;
 
+    sprintf(" - Create Task number %i", i );
     if ~isempty(iy_files)
         matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(iy_files(1).folder, iy_files(1).name)};
     else
@@ -168,6 +170,7 @@ function run_newcat_normseg(base_dir)
     matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
     i=i+1;
 
+    sprintf(" - Create Task number %i", i );
     if ~isempty(iy_files)
         matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(iy_files(1).folder, iy_files(1).name)};
     else
@@ -181,6 +184,7 @@ function run_newcat_normseg(base_dir)
     matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
     i=i+1;
 
+    sprintf(" - Create Task number %i", i );
     if ~isempty(iy_files)
         matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(iy_files(1).folder, iy_files(1).name)};
     else
@@ -194,6 +198,7 @@ function run_newcat_normseg(base_dir)
     matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
     i=i+1;
 
+    sprintf(" - Create Task number %i", i );
     if ~isempty(iy_files)
         matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(iy_files(1).folder, iy_files(1).name)};
     else
@@ -207,6 +212,7 @@ function run_newcat_normseg(base_dir)
     matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
     i=i+1;
 
+    sprintf(" - Create Task number %i", i );
     if ~isempty(iy_files)
         matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(iy_files(1).folder, iy_files(1).name)};
     else
@@ -220,6 +226,7 @@ function run_newcat_normseg(base_dir)
     matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
     i=i+1;
 
+    sprintf(" - Create Task number %i", i );
     if ~isempty(iy_files)
         matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(iy_files(1).folder, iy_files(1).name)};
     else
@@ -234,6 +241,7 @@ function run_newcat_normseg(base_dir)
     
     if isfield(dti_struct, 'S0')
         i = i + 1;
+        sprintf(" - Create Task number %i (DTI)", i );
 
         dti_dir = fullfile(mri_dir, 'DTI');
         if ~exist(dti_dir, 'dir')
@@ -258,6 +266,7 @@ function run_newcat_normseg(base_dir)
 
     if isfield(asl_struct, 'M0_masked')
         i = i + 1;
+        sprintf(" - Create Task number %i (ASL)", i );
 
         asl_dir = fullfile(mri_dir, 'ASL');
         if ~exist(asl_dir, 'dir')
@@ -265,7 +274,7 @@ function run_newcat_normseg(base_dir)
         end
 
         asl_files = struct2cell(asl_struct);
-        asl_files = asl_files(:);
+        asl_files = asl_files(~cellfun('isempty', asl_files));
 
         if ~isempty(y_files)
             matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(y_files(1).folder, y_files(1).name)};
@@ -282,6 +291,7 @@ function run_newcat_normseg(base_dir)
 
     if isfield(noddi_struct, 'File1')
         i = i + 1;
+        sprintf(" - Create Task number %i (NODDI)", i );
 
         noddi_dir = fullfile(mri_dir, 'NODDI');
         if ~exist(noddi_dir, 'dir')
