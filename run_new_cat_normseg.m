@@ -1,12 +1,12 @@
-function run_newcat_normseg(base_dir)
+function run_new_cat_normseg(base_dir)
 
     % Add SPM12 and CAT12 to the MATLAB path
-    addpath('/isilon/datalake/riipl/scratch/ADRC/Hellcat-12.9/libs/spm12/spm12/');
-    addpath('/isilon/datalake/riipl/scratch/ADRC/Hellcat-12.9/');
+    addpath('/isilon/datalake/riipl/original/DEMONco/Hellcat-12.9/libs/spm12/spm12/');
+    addpath('/isilon/datalake/riipl/original/DEMONco/Hellcat-12.9/');
 
-    % atlas aavl3
-    label_map_path='/isilon/datalake/riipl/scratch/ADRC/Hellcat-12.9/libs/spm12/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/';
-    label_maps_files = {'neuromorphometrics.nii','aal3.nii','cobra.nii','hammers.nii','lpba40.nii','ibsr.nii','JHU.nii','brainmask_T1.nii'};
+    % Updated atlas list including hypothalamic atlas
+    label_map_path='/isilon/datalake/riipl/original/DEMONco/Hellcat-12.9/libs/spm12/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/';
+    label_maps_files = {'neuromorphometrics.nii','aal3.nii','cobra.nii','hammers.nii','lpba40.nii','ibsr.nii','JHU.nii','brainmask_T1.nii','hypothalamusAtlas.nii.gz'};
 
     % Create the new directory
     newdir = fullfile(base_dir, 'nifti', 'cat12_v2560');
@@ -14,7 +14,7 @@ function run_newcat_normseg(base_dir)
         mkdir(newdir);
     end
 
-    % Find the T1w image % tfl3d116ns.nii.gz
+    % Find the T1w image
     t1wfiles = dir(fullfile([base_dir, '/nifti/'], '3*-tfl3d116ns.nii*'));
     if isempty(t1wfiles)
         error('No T1w image found');
@@ -23,7 +23,7 @@ function run_newcat_normseg(base_dir)
     % Copy the T1w image to the new directory
     copyfile(fullfile(t1wfiles(1).folder, t1wfiles(1).name), newdir, 'f');
 
-    % Check if a file matching the pattern "iy_*-tfl3d116ns.nii" is present in the subject's nifti/cat12_2550/mri folder
+    % Check if processing has already been done
     mri_dir = fullfile(newdir, 'mri');
     y_files = dir(fullfile(mri_dir, 'y_*-tfl3d116ns.nii'));
     iy_files = dir(fullfile(mri_dir, 'iy_*-tfl3d116ns.nii'));
@@ -32,289 +32,356 @@ function run_newcat_normseg(base_dir)
     disp(sprintf("MRI dir %s", mri_dir));
     disp(sprintf("Input T1 %s", fullfile(newdir, t1wfiles(end).name)));
 
-    [asl_struct, ~] = getASLFiles(base_dir);
-    [dti_struct, ~] = getDTIFiles(base_dir);
-    [noddi_struct, ~] = getNODDIFiles(base_dir);
+    % Get DTI, NODDI, and ASL files
+    [asl_struct, asl_success] = getASLFiles(base_dir);
+    [dti_struct, dti_success] = getDTIFiles(base_dir);
+    [noddi_struct, noddi_success] = getNODDIFiles(base_dir);
 
-    if ~isempty(y_files)
-        disp('File matching the pattern "y_*-tfl3d116ns.nii" is present in the mri folder.');
-    else
-        disp('No file matching the pattern "y_*-tfl3d116ns.nii" found in the mri folder.');
-        % Perform the segmentation and normalization using SPM12 and CAT12
-        % This is a placeholder - replace with your actual code
-        spm('defaults', 'FMRI');
-        spm_jobman('initcfg');
-
-        matlabbatch{1}.spm.tools.cat.estwrite.data = {fullfile(newdir, t1wfiles(end).name) };
-        %matlabbatch{1}.spm.tools.cat.estwrite.data_wmh = {''};
-        matlabbatch{1}.spm.tools.cat.estwrite.nproc = 8;
-        matlabbatch{1}.spm.tools.cat.estwrite.useprior = '';
-        matlabbatch{1}.spm.tools.cat.estwrite.opts.tpm = {'/isilon/datalake/riipl/scratch/ADRC/Hellcat-12.9/libs/spm12/spm12/tpm/TPM.nii'};
-        matlabbatch{1}.spm.tools.cat.estwrite.opts.affreg = 'mni';
-        matlabbatch{1}.spm.tools.cat.estwrite.opts.biasacc = 0.5;
-        matlabbatch{1}.spm.tools.cat.estwrite.extopts.restypes.optimal = [1 0.3];
-        matlabbatch{1}.spm.tools.cat.estwrite.extopts.setCOM = 1;
-        matlabbatch{1}.spm.tools.cat.estwrite.extopts.APP = 1070;
-        matlabbatch{1}.spm.tools.cat.estwrite.extopts.affmod = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.extopts.LASstr = 0.5;
-        matlabbatch{1}.spm.tools.cat.estwrite.extopts.LASmyostr = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.extopts.gcutstr = 2;
-        matlabbatch{1}.spm.tools.cat.estwrite.extopts.WMHC = 2;
-        matlabbatch{1}.spm.tools.cat.estwrite.extopts.registration.shooting.shootingtpm = {'/isilon/datalake/riipl/scratch/ADRC/Hellcat-12.9/libs/spm12/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_0_GS.nii'};
-        matlabbatch{1}.spm.tools.cat.estwrite.extopts.registration.shooting.regstr = 0.5;
-        matlabbatch{1}.spm.tools.cat.estwrite.extopts.vox = 1.5;
-        matlabbatch{1}.spm.tools.cat.estwrite.extopts.bb = 12;
-        matlabbatch{1}.spm.tools.cat.estwrite.extopts.SRP = 22;
-        matlabbatch{1}.spm.tools.cat.estwrite.extopts.ignoreErrors = 1;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.BIDS.BIDSno = 1;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.surface = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.surf_measures = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.neuromorphometrics = 1;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.lpba40 = 1;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.cobra = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.hammers = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.thalamus = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.thalamic_nuclei = 0;   
-        matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.suit = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.ibsr = 0;
-        %matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.ownatlas = {''};
-        matlabbatch{1}.spm.tools.cat.estwrite.output.GM.native = 1;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.GM.mod = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.GM.dartel = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.WM.native = 1;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.WM.mod = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.WM.dartel = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.native = 1;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.warped = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.mod = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.dartel = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.ct.native = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.ct.warped = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.ct.dartel = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.pp.native = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.pp.warped = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.pp.dartel = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.WMH.native = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.WMH.warped = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.WMH.mod = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.WMH.dartel = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.SL.native = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.SL.warped = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.SL.mod = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.SL.dartel = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.TPMC.native = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.TPMC.warped = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.TPMC.mod = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.TPMC.dartel = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.atlas.native = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.label.native = 1;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.label.warped = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.label.dartel = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.labelnative = 1;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.bias.warped = 1;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.las.native = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.las.warped = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.las.dartel = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.jacobianwarped = 0;
-        matlabbatch{1}.spm.tools.cat.estwrite.output.warps = [1 1];
-        matlabbatch{1}.spm.tools.cat.estwrite.output.rmat = 0;
-    end
-
-    if ~isempty(iy_files)
-        spm('defaults', 'FMRI');
-        spm_jobman('initcfg');
-        i=1;
-    else
-        i=2;
-    end
-
-    sprintf(" - Create Task number %i", i );
-    if ~isempty(iy_files)
-        matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(iy_files(1).folder, iy_files(1).name)};
-    else
-        matlabbatch{i}.spm.util.defs.comp{1}.def(1) = cfg_dep('CAT12: Segmentation: Inverse Deformation Field', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('()',{1}, '.','invdef', '()',{':'}));
-    end
-    matlabbatch{i}.spm.util.defs.out{1}.pull.fnames = fullfile(label_map_path, label_maps_files(1));
-    matlabbatch{i}.spm.util.defs.out{1}.pull.savedir.saveusr = {newdir};
-    matlabbatch{i}.spm.util.defs.out{1}.pull.interp = 0;
-    matlabbatch{i}.spm.util.defs.out{1}.pull.mask = 1;
-    matlabbatch{i}.spm.util.defs.out{1}.pull.fwhm = [0 0 0];
-    matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
-    i=i+1;
-
-    sprintf(" - Create Task number %i", i );
-    if ~isempty(iy_files)
-        matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(iy_files(1).folder, iy_files(1).name)};
-    else
-        matlabbatch{i}.spm.util.defs.comp{1}.def(1) = cfg_dep('CAT12: Segmentation: Inverse Deformation Field', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('()',{1}, '.','invdef', '()',{':'}));
-    end
-    matlabbatch{i}.spm.util.defs.out{1}.pull.fnames = fullfile(label_map_path, label_maps_files(2));
-    matlabbatch{i}.spm.util.defs.out{1}.pull.savedir.saveusr = {newdir};
-    matlabbatch{i}.spm.util.defs.out{1}.pull.interp = 0;
-    matlabbatch{i}.spm.util.defs.out{1}.pull.mask = 1;
-    matlabbatch{i}.spm.util.defs.out{1}.pull.fwhm = [0 0 0];
-    matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
-    i=i+1;
-
-    sprintf(" - Create Task number %i", i );
-    if ~isempty(iy_files)
-        matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(iy_files(1).folder, iy_files(1).name)};
-    else
-        matlabbatch{i}.spm.util.defs.comp{1}.def(1) = cfg_dep('CAT12: Segmentation: Inverse Deformation Field', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('()',{1}, '.','invdef', '()',{':'}));
-    end
-    matlabbatch{i}.spm.util.defs.out{1}.pull.fnames = fullfile(label_map_path, label_maps_files(3));
-    matlabbatch{i}.spm.util.defs.out{1}.pull.savedir.saveusr = {newdir};
-    matlabbatch{i}.spm.util.defs.out{1}.pull.interp = 0;
-    matlabbatch{i}.spm.util.defs.out{1}.pull.mask = 1;
-    matlabbatch{i}.spm.util.defs.out{1}.pull.fwhm = [0 0 0];
-    matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
-    i=i+1;
-
-    sprintf(" - Create Task number %i", i );
-    if ~isempty(iy_files)
-        matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(iy_files(1).folder, iy_files(1).name)};
-    else
-        matlabbatch{i}.spm.util.defs.comp{1}.def(1) = cfg_dep('CAT12: Segmentation: Inverse Deformation Field', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('()',{1}, '.','invdef', '()',{':'}));
-    end
-    matlabbatch{i}.spm.util.defs.out{1}.pull.fnames = fullfile(label_map_path, label_maps_files(4));
-    matlabbatch{i}.spm.util.defs.out{1}.pull.savedir.saveusr = {newdir};
-    matlabbatch{i}.spm.util.defs.out{1}.pull.interp = 0;
-    matlabbatch{i}.spm.util.defs.out{1}.pull.mask = 1;
-    matlabbatch{i}.spm.util.defs.out{1}.pull.fwhm = [0 0 0];
-    matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
-    i=i+1;
-
-    sprintf(" - Create Task number %i", i );
-    if ~isempty(iy_files)
-        matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(iy_files(1).folder, iy_files(1).name)};
-    else
-        matlabbatch{i}.spm.util.defs.comp{1}.def(1) = cfg_dep('CAT12: Segmentation: Inverse Deformation Field', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('()',{1}, '.','invdef', '()',{':'}));
-    end
-    matlabbatch{i}.spm.util.defs.out{1}.pull.fnames = fullfile(label_map_path, label_maps_files(5));
-    matlabbatch{i}.spm.util.defs.out{1}.pull.savedir.saveusr = {newdir};
-    matlabbatch{i}.spm.util.defs.out{1}.pull.interp = 0;
-    matlabbatch{i}.spm.util.defs.out{1}.pull.mask = 1;
-    matlabbatch{i}.spm.util.defs.out{1}.pull.fwhm = [0 0 0];
-    matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
-    i=i+1;
-
-    sprintf(" - Create Task number %i", i );
-    if ~isempty(iy_files)
-        matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(iy_files(1).folder, iy_files(1).name)};
-    else
-        matlabbatch{i}.spm.util.defs.comp{1}.def(1) = cfg_dep('CAT12: Segmentation: Inverse Deformation Field', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('()',{1}, '.','invdef', '()',{':'}));
-    end
-    matlabbatch{i}.spm.util.defs.out{1}.pull.fnames = fullfile(label_map_path, label_maps_files(6));
-    matlabbatch{i}.spm.util.defs.out{1}.pull.savedir.saveusr = {newdir};
-    matlabbatch{i}.spm.util.defs.out{1}.pull.interp = 0;
-    matlabbatch{i}.spm.util.defs.out{1}.pull.mask = 1;
-    matlabbatch{i}.spm.util.defs.out{1}.pull.fwhm = [0 0 0];
-    matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
-    i=i+1;
-
-    sprintf(" - Create Task number %i", i );
-    if ~isempty(iy_files)
-        matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(iy_files(1).folder, iy_files(1).name)};
-    else
-        matlabbatch{i}.spm.util.defs.comp{1}.def(1) = cfg_dep('CAT12: Segmentation: Inverse Deformation Field', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('()',{1}, '.','invdef', '()',{':'}));
-    end
-    matlabbatch{i}.spm.util.defs.out{1}.pull.fnames = fullfile(label_map_path, label_maps_files(7));
-    matlabbatch{i}.spm.util.defs.out{1}.pull.savedir.saveusr = {newdir};
-    matlabbatch{i}.spm.util.defs.out{1}.pull.interp = 0;
-    matlabbatch{i}.spm.util.defs.out{1}.pull.mask = 1;
-    matlabbatch{i}.spm.util.defs.out{1}.pull.fwhm = [0 0 0];
-    matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
-    i=i+1;
-
-    sprintf(" - Create Task number %i", i );
-    if ~isempty(iy_files)
-        matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(iy_files(1).folder, iy_files(1).name)};
-    else
-        matlabbatch{i}.spm.util.defs.comp{1}.def(1) = cfg_dep('CAT12: Segmentation: Inverse Deformation Field', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('()',{1}, '.','invdef', '()',{':'}));
-    end
-    matlabbatch{i}.spm.util.defs.out{1}.pull.fnames = fullfile(label_map_path, label_maps_files(8));
-    matlabbatch{i}.spm.util.defs.out{1}.pull.savedir.saveusr = {newdir};
-    matlabbatch{i}.spm.util.defs.out{1}.pull.interp = 0;
-    matlabbatch{i}.spm.util.defs.out{1}.pull.mask = 1;
-    matlabbatch{i}.spm.util.defs.out{1}.pull.fwhm = [0 0 0];
-    matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
+    % Initialize batch counter
+    batch_idx = 1;
     
-    if isfield(dti_struct, 'S0')
-        i = i + 1;
-        sprintf(" - Create Task number %i (DTI)", i );
+    % Step 1: CAT12 Segmentation and Normalization (if not already done)
+    if isempty(y_files)
+        disp('Running CAT12 segmentation and normalization...');
+        
+        spm('defaults', 'FMRI');
+        spm_jobman('initcfg');
 
-        dti_dir = fullfile(mri_dir, 'DTI');
-        if ~exist(dti_dir, 'dir')
-            mkdir(dti_dir);
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.data = {fullfile(newdir, t1wfiles(end).name)};
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.nproc = 8;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.useprior = '';
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.opts.tpm = {'/isilon/datalake/riipl/original/DEMONco/Hellcat-12.9/libs/spm12/spm12/tpm/TPM.nii'};
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.opts.affreg = 'mni';
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.opts.biasacc = 0.5;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.extopts.restypes.optimal = [1 0.3];
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.extopts.setCOM = 1;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.extopts.APP = 1070;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.extopts.affmod = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.extopts.LASstr = 0.5;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.extopts.LASmyostr = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.extopts.gcutstr = 2;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.extopts.WMHC = 2;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.extopts.registration.shooting.shootingtpm = {'/isilon/datalake/riipl/original/DEMONco/Hellcat-12.9/libs/spm12/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_0_GS.nii'};
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.extopts.registration.shooting.regstr = 0.5;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.extopts.vox = 1;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.extopts.bb = 12;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.extopts.SRP = 22;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.extopts.ignoreErrors = 1;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.BIDS.BIDSno = 1;
+        
+        % Disable surface mapping as requested
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.surface = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.surf_measures = 0;
+        
+        % Atlas settings - keep existing ones
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.ROImenu.atlases.neuromorphometrics = 1;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.ROImenu.atlases.lpba40 = 1;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.ROImenu.atlases.cobra = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.ROImenu.atlases.hammers = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.ROImenu.atlases.thalamus = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.ROImenu.atlases.thalamic_nuclei = 0;   
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.ROImenu.atlases.suit = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.ROImenu.atlases.ibsr = 0;
+        
+        % Tissue segmentation outputs
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.GM.native = 1;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.GM.warped = 1;  % Enable warped for analysis
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.GM.mod = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.GM.dartel = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.WM.native = 1;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.WM.warped = 1;  % Enable warped for analysis
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.WM.mod = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.WM.dartel = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.CSF.native = 1;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.CSF.warped = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.CSF.mod = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.CSF.dartel = 0;
+        
+        % Other outputs (disabled)
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.ct.native = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.ct.warped = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.ct.dartel = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.pp.native = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.pp.warped = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.pp.dartel = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.WMH.native = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.WMH.warped = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.WMH.mod = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.WMH.dartel = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.SL.native = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.SL.warped = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.SL.mod = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.SL.dartel = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.TPMC.native = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.TPMC.warped = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.TPMC.mod = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.TPMC.dartel = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.atlas.native = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.label.native = 1;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.label.warped = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.label.dartel = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.labelnative = 1;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.bias.warped = 1;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.las.native = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.las.warped = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.las.dartel = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.jacobianwarped = 0;
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.warps = [1 1];  % Forward and inverse deformation fields
+        matlabbatch{batch_idx}.spm.tools.cat.estwrite.output.rmat = 0;
+        
+        batch_idx = batch_idx + 1;
+    else
+        disp('CAT12 processing already completed, skipping segmentation step.');
+        spm('defaults', 'FMRI');
+        spm_jobman('initcfg');
+    end
+
+    % Step 2: Coregister DTI to native T1 space and then normalize
+    if dti_success && isfield(dti_struct, 'S0')
+        disp('Processing DTI data...');
+        
+        % Create DTI normalized directory
+        dti_norm_dir = fullfile(mri_dir, 'DTI');
+        if ~exist(dti_norm_dir, 'dir'), mkdir(dti_norm_dir); end
+        
+        % Get T1 native space image for coregistration target
+        t1_native = fullfile(mri_dir, ['m' t1wfiles(end).name]);
+        if ~exist(t1_native, 'file')
+            % If bias-corrected doesn't exist, use original
+            t1_native = fullfile(newdir, t1wfiles(end).name);
         end
         
+        % Coregister DTI to native T1 space and WRITE coregistered files
         dti_files = struct2cell(dti_struct);
-        dti_files = dti_files(:);
-
+        ref_image = dti_struct.S0;  % Use S0 as reference for coregistration
+        source_images = dti_files(~strcmp(dti_files, ref_image));  % All other DTI files
+        
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.ref = {t1_native};
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.source = {ref_image};
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.other = source_images;
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.eoptions.cost_fun = 'nmi';
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.eoptions.sep = [4 2];
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.eoptions.tol = [0.02 0.02 0.02 0.001 0.001 0.001 0.01 0.01 0.01 0.001 0.001 0.001];
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.eoptions.fwhm = [7 7];
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.roptions.interp = 4;
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.roptions.wrap = [0 0 0];
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.roptions.mask = 0;
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.roptions.prefix = 'r';
+        
+        batch_idx = batch_idx + 1;
+        
+        % Apply forward deformation to coregistered DTI files for normalization
         if ~isempty(y_files)
-            matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(y_files(1).folder, y_files(1).name)};
+            matlabbatch{batch_idx}.spm.util.defs.comp{1}.def = {fullfile(y_files(1).folder, y_files(1).name)};
         else
-            matlabbatch{i}.spm.util.defs.comp{1}.def(1) = cfg_dep('CAT12: Segmentation: Deformation Field', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('()',{1}, '.','invdef', '()',{':'}));
+            matlabbatch{batch_idx}.spm.util.defs.comp{1}.def(1) = cfg_dep('CAT12: Segmentation: Deformation Field', ...
+                substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), ...
+                substruct('()',{1}, '.','def', '()',{':'}));
         end
-        matlabbatch{i}.spm.util.defs.out{1}.pull.fnames = dti_files;
-        matlabbatch{i}.spm.util.defs.out{1}.pull.savedir.saveusr = {dti_dir};
-        matlabbatch{i}.spm.util.defs.out{1}.pull.interp = 4;
-        matlabbatch{i}.spm.util.defs.out{1}.pull.mask = 1;
-        matlabbatch{i}.spm.util.defs.out{1}.pull.fwhm = [0 0 0];
-        matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
+        
+        % Create list of coregistered DTI files (with 'r' prefix) for normalization
+        coregistered_dti_files = cell(size(dti_files));
+        for i = 1:length(dti_files)
+            [pth, nam, ext] = fileparts(dti_files{i});
+            coregistered_dti_files{i} = fullfile(pth, ['r' nam ext]);
+        end
+        
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.fnames = coregistered_dti_files;
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.savedir.saveusr = {dti_norm_dir};
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.interp = 4;
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.mask = 1;
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.fwhm = [0 0 0];
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.prefix = 'w';
+        
+        batch_idx = batch_idx + 1;
     end
 
-    if isfield(asl_struct, 'M0_masked')
-        i = i + 1;
-        sprintf(" - Create Task number %i (ASL)", i );
-
-        asl_dir = fullfile(mri_dir, 'ASL');
-        if ~exist(asl_dir, 'dir')
-            mkdir(asl_dir);
+    % Step 3: Coregister NODDI to native T1 space and then normalize
+    if noddi_success && isfield(noddi_struct, 'File1')
+        disp('Processing NODDI data...');
+        
+        % Create NODDI normalized directory
+        noddi_norm_dir = fullfile(mri_dir, 'NODDI');
+        if ~exist(noddi_norm_dir, 'dir'), mkdir(noddi_norm_dir); end
+        
+        % Get T1 native space image for coregistration target
+        t1_native = fullfile(mri_dir, ['m' t1wfiles(end).name]);
+        if ~exist(t1_native, 'file')
+            t1_native = fullfile(newdir, t1wfiles(end).name);
         end
-
-        asl_files = struct2cell(asl_struct);
-        asl_files = asl_files(~cellfun('isempty', asl_files));
-
-        if ~isempty(y_files)
-            matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(y_files(1).folder, y_files(1).name)};
-        else
-            matlabbatch{i}.spm.util.defs.comp{1}.def(1) = cfg_dep('CAT12: Segmentation: Deformation Field', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('()',{1}, '.','invdef', '()',{':'}));
-        end
-        matlabbatch{i}.spm.util.defs.out{1}.pull.fnames = asl_files;
-        matlabbatch{i}.spm.util.defs.out{1}.pull.savedir.saveusr = {asl_dir};
-        matlabbatch{i}.spm.util.defs.out{1}.pull.interp = 4;
-        matlabbatch{i}.spm.util.defs.out{1}.pull.mask = 1;
-        matlabbatch{i}.spm.util.defs.out{1}.pull.fwhm = [0 0 0];
-        matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
-    end
-
-    if isfield(noddi_struct, 'File1')
-        i = i + 1;
-        sprintf(" - Create Task number %i (NODDI)", i );
-
-        noddi_dir = fullfile(mri_dir, 'NODDI');
-        if ~exist(noddi_dir, 'dir')
-            mkdir(noddi_dir);
-        end
-
+        
+        % Coregister NODDI to native T1 space and WRITE coregistered files
         noddi_files = struct2cell(noddi_struct);
-        noddi_files = noddi_files(:);
-
+        ref_image = noddi_files{1};  % Use first NODDI file as reference
+        source_images = noddi_files(2:end);  % All other NODDI files
+        
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.ref = {t1_native};
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.source = {ref_image};
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.other = source_images;
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.eoptions.cost_fun = 'nmi';
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.eoptions.sep = [4 2];
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.eoptions.tol = [0.02 0.02 0.02 0.001 0.001 0.001 0.01 0.01 0.01 0.001 0.001 0.001];
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.eoptions.fwhm = [7 7];
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.roptions.interp = 4;
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.roptions.wrap = [0 0 0];
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.roptions.mask = 0;
+        matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.roptions.prefix = 'r';
+        
+        batch_idx = batch_idx + 1;
+        
+        % Apply forward deformation to coregistered NODDI files for normalization
         if ~isempty(y_files)
-            matlabbatch{i}.spm.util.defs.comp{1}.def = {fullfile(y_files(1).folder, y_files(1).name)};
+            matlabbatch{batch_idx}.spm.util.defs.comp{1}.def = {fullfile(y_files(1).folder, y_files(1).name)};
         else
-            matlabbatch{i}.spm.util.defs.comp{1}.def(1) = cfg_dep('CAT12: Segmentation: Deformation Field', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('()',{1}, '.','invdef', '()',{':'}));
+            matlabbatch{batch_idx}.spm.util.defs.comp{1}.def(1) = cfg_dep('CAT12: Segmentation: Deformation Field', ...
+                substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), ...
+                substruct('()',{1}, '.','def', '()',{':'}));
         end
-        matlabbatch{i}.spm.util.defs.out{1}.pull.fnames = noddi_files;
-        matlabbatch{i}.spm.util.defs.out{1}.pull.savedir.saveusr = {noddi_dir};
-        matlabbatch{i}.spm.util.defs.out{1}.pull.interp = 4;
-        matlabbatch{i}.spm.util.defs.out{1}.pull.mask = 1;
-        matlabbatch{i}.spm.util.defs.out{1}.pull.fwhm = [0 0 0];
-        matlabbatch{i}.spm.util.defs.out{1}.pull.prefix = 'w';
+        
+        % Create list of coregistered NODDI files (with 'r' prefix) for normalization
+        coregistered_noddi_files = cell(size(noddi_files));
+        for i = 1:length(noddi_files)
+            [pth, nam, ext] = fileparts(noddi_files{i});
+            coregistered_noddi_files{i} = fullfile(pth, ['r' nam ext]);
+        end
+        
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.fnames = coregistered_noddi_files;
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.savedir.saveusr = {noddi_norm_dir};
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.interp = 4;
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.mask = 1;
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.fwhm = [0 0 0];
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.prefix = 'w';
+        
+        batch_idx = batch_idx + 1;
     end
 
+    % Step 4: Coregister ASL to native T1 space and then normalize
+    if asl_success && isfield(asl_struct, 'M0_masked')
+        disp('Processing ASL data...');
+        
+        % Create ASL directories
+        asl_norm_dir = fullfile(mri_dir, 'ASL');
+        if ~exist(asl_norm_dir, 'dir'), mkdir(asl_norm_dir); end
+        
+        % Get T1 native space image for coregistration target
+        t1_native = fullfile(mri_dir, ['m' t1wfiles(end).name]);
+        if ~exist(t1_native, 'file')
+            t1_native = fullfile(newdir, t1wfiles(end).name);
+        end
+        
+        % Handle multiple ASL datasets
+        all_coregistered_asl_files = {};
+        
+        for asl_idx = 1:length(asl_struct)
+            asl_files_cell = struct2cell(asl_struct(asl_idx));
+            asl_files_current = asl_files_cell(~cellfun('isempty', asl_files_cell));
+            
+            if ~isempty(asl_files_current)
+                ref_image = asl_struct(asl_idx).M0_masked;  % Use M0 as reference
+                source_images = asl_files_current(~strcmp(asl_files_current, ref_image));
+                
+                % Coregister ASL to native T1 space and WRITE coregistered files
+                matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.ref = {t1_native};
+                matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.source = {ref_image};
+                matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.other = source_images;
+                matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.eoptions.cost_fun = 'nmi';
+                matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.eoptions.sep = [4 2];
+                matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.eoptions.tol = [0.02 0.02 0.02 0.001 0.001 0.001 0.01 0.01 0.01 0.001 0.001 0.001];
+                matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.eoptions.fwhm = [7 7];
+                matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.roptions.interp = 4;
+                matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.roptions.wrap = [0 0 0];
+                matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.roptions.mask = 0;
+                matlabbatch{batch_idx}.spm.spatial.coreg.estwrite.roptions.prefix = 'r';
+                
+                batch_idx = batch_idx + 1;
+                
+                % Create list of coregistered ASL files (with 'r' prefix) for normalization
+                coregistered_asl_files = cell(size(asl_files_current));
+                for i = 1:length(asl_files_current)
+                    [pth, nam, ext] = fileparts(asl_files_current{i});
+                    coregistered_asl_files{i} = fullfile(pth, ['r' nam ext]);
+                end
+                
+                % Add to master list
+                all_coregistered_asl_files = [all_coregistered_asl_files; coregistered_asl_files];
+                
+                % Apply forward deformation to coregistered ASL files for normalization
+                if ~isempty(y_files)
+                    matlabbatch{batch_idx}.spm.util.defs.comp{1}.def = {fullfile(y_files(1).folder, y_files(1).name)};
+                else
+                    matlabbatch{batch_idx}.spm.util.defs.comp{1}.def(1) = cfg_dep('CAT12: Segmentation: Deformation Field', ...
+                        substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), ...
+                        substruct('()',{1}, '.','def', '()',{':'}));
+                end
+                
+                matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.fnames = coregistered_asl_files;
+                matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.savedir.saveusr = {asl_norm_dir};
+                matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.interp = 4;
+                matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.mask = 1;
+                matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.fwhm = [0 0 0];
+                matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.prefix = 'w';
+                
+                batch_idx = batch_idx + 1;
+            end
+        end
+    end
+
+    % Step 5: Apply inverse deformation to bring all label maps to native space
+    disp('Processing label maps to native space...');
+    
+    for atlas_idx = 1:length(label_maps_files)
+        current_atlas = label_maps_files{atlas_idx};
+        
+        % Special handling for hypothalamic atlas (might be .nii.gz)
+        atlas_file = fullfile(label_map_path, current_atlas);
+        
+        if ~isempty(iy_files)
+            matlabbatch{batch_idx}.spm.util.defs.comp{1}.def = {fullfile(iy_files(1).folder, iy_files(1).name)};
+        else
+            matlabbatch{batch_idx}.spm.util.defs.comp{1}.def(1) = cfg_dep('CAT12: Segmentation: Inverse Deformation Field', ...
+                substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), ...
+                substruct('()',{1}, '.','invdef', '()',{':'}));
+        end
+        
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.fnames = {atlas_file};
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.savedir.saveusr = {newdir};
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.interp = 0;  % Nearest neighbor for label maps
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.mask = 1;
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.fwhm = [0 0 0];
+        matlabbatch{batch_idx}.spm.util.defs.out{1}.pull.prefix = 'w';
+        
+        batch_idx = batch_idx + 1;
+    end
+
+    % Run all batch jobs
+    disp('Running SPM batch jobs...');
     spm_jobman('run', matlabbatch);
-    clear matlabbatch % clear matlabbatch
+    clear matlabbatch;
+    
+    disp('Processing complete!');
+    
+    % Print summary of outputs
+    disp('=== Processing Summary ===');
+    disp(['Output directory: ' newdir]);
+    disp(['MRI outputs: ' mri_dir]);
+    
+    if dti_success
+        disp(['DTI native coregistered (r* prefix): Original DTI directories']);
+        disp(['DTI normalized (wr* prefix): ' fullfile(mri_dir, 'DTI')]);
+    end
+    if noddi_success
+        disp(['NODDI native coregistered (r* prefix): Original NODDI directory']);
+        disp(['NODDI normalized (wr* prefix): ' fullfile(mri_dir, 'NODDI')]);
+    end
+    if asl_success
+        disp(['ASL native coregistered (r* prefix): Original ASL directories']);
+        disp(['ASL normalized (wr* prefix): ' fullfile(mri_dir, 'ASL')]);
+    end
+    
+    disp('Native space atlases (w* prefix) available in output directory');
+    disp('Warped tissue segmentations (mwp1*, mwp2*) available in mri directory');
+    disp('');
+    disp('For native space analysis: Use r* files with w* atlas files');
+    disp('For template space analysis: Use wr* files with original template atlases');
 
 end

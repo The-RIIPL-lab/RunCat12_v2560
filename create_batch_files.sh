@@ -14,7 +14,7 @@ fi
 base_name=$(basename $1)
 
 # Create a sbatch file in the jobs folder
-cat << EOF > jobs/CAT_${base_name:0:9}.sbatch
+cat << EOF > jobs/CAT_${base_name}.sbatch
 #!/bin/tcsh
 #SBATCH --job-name=CAT_${base_name:0:9}
 #SBATCH --output=`pwd`/logs/${base_name}.out
@@ -27,7 +27,7 @@ cat << EOF > jobs/CAT_${base_name:0:9}.sbatch
 #SBATCH -A ansir-users
 #SBATCH -W
 module load matlab
-cd /isilon/datalake/riipl/scratch/ADRC/Hellcat-12.9/
+cd /isilon/datalake/riipl/original/DEMONco/Hellcat-12.9/
 matlab -r "run_new_cat_normseg('$1'); exit;"
 wait
 EOF
