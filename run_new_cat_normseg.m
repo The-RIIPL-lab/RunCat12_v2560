@@ -162,7 +162,7 @@ function run_cat12_segmentation(newdir, t1wfiles)
     matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.cobra = 0;
     matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.hammers = 0;
     matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.thalamus = 0;
-    matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.thalamic_nuclei = 0;   
+    matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.thalamic_nuclei = 0;    
     matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.suit = 0;
     matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.ibsr = 0;
     
@@ -278,22 +278,41 @@ function success = process_dti_data(dti_struct, mri_dir, t1wfiles, newdir, y_fil
         end
         disp('  DTI coregistration successful');
         
+        % === NEW STEP: Move native-space (r*) files ===
+        disp('  Moving native-space DTI (r*) files...');
+        dti_native_dir = fullfile(mri_dir, 'DTI_native');
+        if ~exist(dti_native_dir, 'dir')
+            mkdir(dti_native_dir);
+        end
+        
+        % Create list of coregistered files, move them, and update paths
+        coregistered_dti_files = cell(size(dti_files));
+        for i = 1:length(dti_files)
+            [pth, nam, ext] = fileparts(dti_files{i});
+            original_r_file = fullfile(pth, ['r' nam ext]);
+            [~, fname, fext] = fileparts(original_r_file);
+            new_r_file_path = fullfile(dti_native_dir, [fname fext]);
+            
+            if ~exist(original_r_file, 'file')
+                error('Coregistered file not found: %s', original_r_file);
+            end
+            
+            % Move the file
+            [move_success, msg] = movefile(original_r_file, new_r_file_path, 'f');
+            if ~move_success
+                error('Failed to move file %s to %s: %s', original_r_file, new_r_file_path, msg);
+            end
+            
+            coregistered_dti_files{i} = new_r_file_path; % Update path for normalization
+        end
+        disp(sprintf('  Successfully moved %d files to %s', length(dti_files), dti_native_dir));
+        % === END NEW STEP ===
+        
         % SUBSTEP 2B: Normalize coregistered DTI files
         disp('  Substep 2b: Normalizing coregistered DTI files...');
         
         if isempty(y_files)
             error('Forward deformation field not found');
-        end
-        
-        % Create list of coregistered files and verify they exist
-        coregistered_dti_files = cell(size(dti_files));
-        for i = 1:length(dti_files)
-            [pth, nam, ext] = fileparts(dti_files{i});
-            coregistered_dti_files{i} = fullfile(pth, ['r' nam ext]);
-            
-            if ~exist(coregistered_dti_files{i}, 'file')
-                error('Coregistered file not found: %s', coregistered_dti_files{i});
-            end
         end
         
         clear matlabbatch;
@@ -389,22 +408,41 @@ function success = process_noddi_data(noddi_struct, mri_dir, t1wfiles, newdir, y
         end
         disp('  NODDI coregistration successful');
         
+        % === NEW STEP: Move native-space (r*) files ===
+        disp('  Moving native-space NODDI (r*) files...');
+        noddi_native_dir = fullfile(mri_dir, 'NODDI_native');
+        if ~exist(noddi_native_dir, 'dir')
+            mkdir(noddi_native_dir);
+        end
+
+        % Create list of coregistered files, move them, and update paths
+        coregistered_noddi_files = cell(size(noddi_files));
+        for i = 1:length(noddi_files)
+            [pth, nam, ext] = fileparts(noddi_files{i});
+            original_r_file = fullfile(pth, ['r' nam ext]);
+            [~, fname, fext] = fileparts(original_r_file);
+            new_r_file_path = fullfile(noddi_native_dir, [fname fext]);
+
+            if ~exist(original_r_file, 'file')
+                error('Coregistered file not found: %s', original_r_file);
+            end
+            
+            % Move the file
+            [move_success, msg] = movefile(original_r_file, new_r_file_path, 'f');
+            if ~move_success
+                error('Failed to move file %s to %s: %s', original_r_file, new_r_file_path, msg);
+            end
+            
+            coregistered_noddi_files{i} = new_r_file_path; % Update path for normalization
+        end
+        disp(sprintf('  Successfully moved %d files to %s', length(noddi_files), noddi_native_dir));
+        % === END NEW STEP ===
+        
         % SUBSTEP 3B: Normalize coregistered NODDI files
         disp('  Substep 3b: Normalizing coregistered NODDI files...');
         
         if isempty(y_files)
             error('Forward deformation field not found');
-        end
-        
-        % Create list of coregistered files and verify they exist
-        coregistered_noddi_files = cell(size(noddi_files));
-        for i = 1:length(noddi_files)
-            [pth, nam, ext] = fileparts(noddi_files{i});
-            coregistered_noddi_files{i} = fullfile(pth, ['r' nam ext]);
-            
-            if ~exist(coregistered_noddi_files{i}, 'file')
-                error('Coregistered file not found: %s', coregistered_noddi_files{i});
-            end
         end
         
         clear matlabbatch;
@@ -511,26 +549,43 @@ function success = process_asl_data(asl_struct, mri_dir, t1wfiles, newdir, y_fil
             end
             disp(sprintf('  ASL dataset %d coregistration successful', asl_idx));
             
+            % === NEW STEP: Move native-space (r*) files ===
+            disp(sprintf('  Moving native-space ASL (r*) files for dataset %d...', asl_idx));
+            % Create a unique directory for each ASL run
+            asl_native_dir = fullfile(mri_dir, sprintf('ASL_native_run%d', asl_idx));
+            if ~exist(asl_native_dir, 'dir')
+                mkdir(asl_native_dir);
+            end
+
+            % Create list of coregistered files, move them, and update paths
+            coregistered_asl_files = cell(size(asl_files_current));
+            for i = 1:length(asl_files_current)
+                [pth, nam, ext] = fileparts(asl_files_current{i});
+                original_r_file = fullfile(pth, ['r' nam ext]);
+                [~, fname, fext] = fileparts(original_r_file);
+                new_r_file_path = fullfile(asl_native_dir, [fname fext]);
+
+                if ~exist(original_r_file, 'file')
+                    error('Coregistered file not found: %s', original_r_file);
+                end
+                
+                % Move the file
+                [move_success, msg] = movefile(original_r_file, new_r_file_path, 'f');
+                if ~move_success
+                    error('Failed to move file %s to %s: %s', original_r_file, new_r_file_path, msg);
+                end
+                
+                coregistered_asl_files{i} = new_r_file_path; % Update path for normalization
+            end
+            disp(sprintf('  Successfully moved %d files to %s', length(asl_files_current), asl_native_dir));
+            % === END NEW STEP ===
+            
             % SUBSTEP 4B: Normalize coregistered ASL files
             disp(sprintf('  Substep 4b-%d: Normalizing coregistered ASL dataset %d...', asl_idx, asl_idx));
             
             if isempty(y_files)
                 error('Forward deformation field not found');
             end
-            
-            % Create list of coregistered files and verify they exist
-            coregistered_asl_files = cell(size(asl_files_current));
-            for i = 1:length(asl_files_current)
-                [pth, nam, ext] = fileparts(asl_files_current{i});
-                coregistered_asl_files{i} = fullfile(pth, ['r' nam ext]);
-                
-                if ~exist(coregistered_asl_files{i}, 'file')
-                    error('Coregistered file not found: %s', coregistered_asl_files{i});
-                end
-            end
-            
-            % Add to master list
-            all_coregistered_asl_files = [all_coregistered_asl_files; coregistered_asl_files];
             
             clear matlabbatch;
             matlabbatch{1}.spm.util.defs.comp{1}.def = {fullfile(y_files(1).folder, y_files(1).name)};
@@ -643,7 +698,7 @@ function print_processing_summary(newdir, mri_dir, dti_success, noddi_success, a
     
     if dti_success
         disp('DTI Processing:');
-        disp(sprintf('  Native coregistered (r* prefix): Original DTI directory'));
+        disp(sprintf('  Native coregistered (r* prefix): %s', fullfile(mri_dir, 'DTI_native')));
         disp(sprintf('  Normalized (wr* prefix): %s', fullfile(mri_dir, 'DTI')));
     else
         disp('DTI Processing: FAILED or NOT AVAILABLE');
@@ -652,7 +707,7 @@ function print_processing_summary(newdir, mri_dir, dti_success, noddi_success, a
     
     if noddi_success
         disp('NODDI Processing:');
-        disp(sprintf('  Native coregistered (r* prefix): Original NODDI directory'));
+        disp(sprintf('  Native coregistered (r* prefix): %s', fullfile(mri_dir, 'NODDI_native')));
         disp(sprintf('  Normalized (wr* prefix): %s', fullfile(mri_dir, 'NODDI')));
     else
         disp('NODDI Processing: FAILED or NOT AVAILABLE');
@@ -661,7 +716,7 @@ function print_processing_summary(newdir, mri_dir, dti_success, noddi_success, a
     
     if asl_success
         disp('ASL Processing:');
-        disp(sprintf('  Native coregistered (r* prefix): Original ASL directories'));
+        disp(sprintf('  Native coregistered (r* prefix): %s', fullfile(mri_dir, 'ASL_native_run*')));
         disp(sprintf('  Normalized (wr* prefix): %s', fullfile(mri_dir, 'ASL')));
     else
         disp('ASL Processing: FAILED or NOT AVAILABLE');
@@ -690,7 +745,7 @@ function print_processing_summary(newdir, mri_dir, dti_success, noddi_success, a
     disp('');
     
     disp('Usage Notes:');
-    disp('  For native space analysis: Use r* files with w* atlas files');
+    disp('  For native space analysis: Use r* files (now in *_native dirs) with w* atlas files');
     disp('  For template space analysis: Use wr* files with original template atlases');
     disp('========================================');
 end
