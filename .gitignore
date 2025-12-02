@@ -5,7 +5,7 @@ testdata/
 old*
 *_atlas/
 .venv
-select_random_ADRC_subjects.sh
 results_*.csv
-test_batch_jobs/*
+test_batch_jobs/
 brain_data_plots/*
+subject_lists/
