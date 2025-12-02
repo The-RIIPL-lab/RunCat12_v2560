@@ -24,10 +24,10 @@ cat << EOF > jobs/CAT_${base_name}.sbatch
 #SBATCH --mem=16G
 #SBATCH --time=20:00
 #SBATCH -p defq
-#SBATCH -A ansir-users
+#SBATCH -A ansir-users  # UPDATE THIS!
 #SBATCH -W
 module load matlab
-cd /isilon/datalake/riipl/original/DEMONco/Hellcat-12.9/
+cd /isilon/datalake/riipl/original/DEMONco/Hellcat-12.9/ # UPDATE THIS
 matlab -r "run_new_cat_normseg('$1'); exit;"
 wait
 EOF
