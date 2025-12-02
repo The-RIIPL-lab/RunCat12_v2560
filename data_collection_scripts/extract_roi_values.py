@@ -20,6 +20,7 @@ import argparse
 
 
 # Template atlas paths
+# UPDATE THESE
 HYPOTHALAMUS_ATLAS_PATH = "/isilon/datalake/riipl/original/DEMONco/Hellcat-12.9/resampled_template_ROIs/rhypothalamusAtlas.nii"
 JHU_ATLAS_PATH = "/isilon/datalake/riipl/original/DEMONco/Hellcat-12.9/resampled_template_ROIs/rJHU.nii"
 
