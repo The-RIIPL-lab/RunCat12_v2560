@@ -1,0 +1,32 @@
+# Methods: Multi-modal MRI Processing and Atlas Registration
+
+## Overview
+This workflow performs automated anatomical segmentation, tissue classification, and multi-modal image registration using CAT12 (v12.9) and SPM12. The pipeline processes T1-weighted structural images alongside diffusion tensor imaging (DTI) and neurite orientation dispersion and density imaging (NODDI) data when available.
+
+## Image Processing Steps
+
+### 1. CAT12 Segmentation and Normalization
+T1-weighted images were processed using CAT12's computational anatomy toolbox. Structural preprocessing included bias field correction (accuracy = 0.5), tissue segmentation into gray matter (GM), white matter (WM), and cerebrospinal fluid (CSF), and spatial normalization to MNI152NLin2009cAsym template space using geodesic shooting registration (regularization strength = 0.5). Native-space and normalized tissue probability maps were generated for GM and WM. Forward (y_*) and inverse (iy_*) deformation fields were computed for subsequent multi-modal registration.
+
+### 2. DTI Registration
+When available, DTI parameter maps (fractional anisotropy, mean diffusivity, axial diffusivity, radial diffusivity) were coregistered to the native T1-weighted image using SPM12's normalized mutual information cost function. Coregistered maps were saved with an 'r' prefix in the DTI_native directory. Subsequently, these native-space maps were normalized to MNI152NLin2009cAsym space using the forward deformation field from CAT12, with 4th-degree B-spline interpolation. Normalized maps (prefix: 'wr') were stored in the DTI directory.
+
+### 3. NODDI Registration
+NODDI-derived metrics (neurite density index, orientation dispersion index, isotropic volume fraction) underwent identical processing to DTI data. Native-space coregistration to T1 was followed by normalization to template space using CAT12-derived deformation fields. Native and normalized outputs were stored in NODDI_native and NODDI directories, respectively.
+
+### 4. Atlas Registration to Native Space
+Two neuroanatomical atlases in MNI152NLin2009cAsym space were transformed to individual native T1 space using inverse deformation fields. The JHU white matter atlas and hypothalamus atlas were warped to native space, with the hypothalamus atlas originally resampled from MNI to MNI152NLin2009cAsym to match CAT12's template space. Nearest-neighbor interpolation (interp = 0) was used to preserve integer label values. Native-space atlases were saved with a 'w' prefix in the subject directory for region-of-interest analyses.
+
+## Software and Templates
+- SPM12 and CAT12 v12.9 (Computational Anatomy Toolbox)
+- Template space: MNI152NLin2009cAsym
+- Registration algorithm: Geodesic shooting (SHOOT)
+- Tissue probability map: SPM12 TPM.nii
+
+## Output Files
+- Native-space tissue segmentations: p1* (GM), p2* (WM), p3* (CSF)
+- Normalized tissue segmentations: mwp1* (GM), mwp2* (WM)
+- Native-space multi-modal maps: r* prefix (DTI_native, NODDI_native directories)
+- Normalized multi-modal maps: wr* prefix (DTI, NODDI directories)
+- Native-space atlases: w* prefix (wJHU.nii, whypothalamusAtlas.nii)
+- Deformation fields: y_* (forward), iy_* (inverse)

@@ -6,4 +6,6 @@ old*
 *_atlas/
 .venv
 select_random_ADRC_subjects.sh
-extract_roi_values.py
+results_*.csv
+test_batch_jobs/*
+brain_data_plots/*
