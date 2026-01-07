@@ -24,7 +24,13 @@ function run_new_cat_normseg(base_dir)
     % Find the T1w image
     t1wfiles = dir(fullfile([base_dir, '/nifti/'], '3*-tfl3d116ns.nii*'));
     if isempty(t1wfiles)
-        error('No T1w image found');
+        warning('No ADRC T1w image found');
+
+	t1wfiles = dir(fullfile([base_dir, '/nifti/'], 'M*-tfl3d116ns.nii*'));
+        if isempty(t1wfiles)
+            warning('No Marvel T1w image found');
+	    exit;
+	end
     end
 
     % Copy the T1w image to the new directory

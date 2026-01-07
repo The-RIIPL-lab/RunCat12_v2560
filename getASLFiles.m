@@ -20,7 +20,7 @@ function [aslFiles, success] = getASLFiles(inputDataFolder)
         aslFolderPath = fullfile(aslFolderPaths(j).folder, aslFolderPaths(j).name);
         
         % Find the M0_masked file
-        m0Files = dir(fullfile(aslFolderPath, '3*_M0_masked.nii'));
+        m0Files = dir(fullfile(aslFolderPath, 'M*_M0_masked.nii'));
         if isempty(m0Files)
             disp(['M0_masked file not found in ' aslFolderPath]);
             aslFiles = [];
@@ -31,13 +31,24 @@ function [aslFiles, success] = getASLFiles(inputDataFolder)
         % Add the M0_masked file to the struct
         aslFiles(j).M0_masked = fullfile(m0Files(1).folder, m0Files(1).name);
         
-        % Find the other ASL files
-        otherFiles = dir(fullfile(aslFolderPath, '3*._CBF*.nii'));
+        % Find all CBF files (broad search)
+        allCBFFiles = dir(fullfile(aslFolderPath, '*_CBF*.nii'));
         
-        % Filter out the M0_masked file
-        otherFiles = otherFiles(~strcmp({otherFiles.name}, m0Files(1).name));
+        % Filter to keep only files starting with '3' or uppercase letters (A-Z)
+        % This excludes files starting with lowercase like r, m, w
+        otherFiles = [];
+        for k = 1:length(allCBFFiles)
+            firstChar = allCBFFiles(k).name(1);
+            % Check if first character is '3' or uppercase letter
+            if firstChar == '3' || (firstChar >= 'A' && firstChar <= 'Z')
+                % Also exclude the M0_masked file if it matches
+                if ~strcmp(allCBFFiles(k).name, m0Files(1).name)
+                    otherFiles = [otherFiles; allCBFFiles(k)];
+                end
+            end
+        end
         
-        % Add the other ASL files to the struct
+        % Add the filtered ASL files to the struct
         for i = 1:length(otherFiles)
             aslFiles(j).(['File' num2str(i)]) = fullfile(otherFiles(i).folder, otherFiles(i).name);
         end

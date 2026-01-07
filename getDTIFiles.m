@@ -25,8 +25,18 @@ function [dtiFiles, success] = getDTIFiles(inputDataFolder)
         end
     end
     
-    % Find the S0 file
-    s0Files = dir(fullfile(dtiFolderPath, '3*_ECC_S0.nii'));
+    % Find all S0 files (broad search)
+    allS0Files = dir(fullfile(dtiFolderPath, '*_ECC_S0.nii'));
+    
+    % Filter to keep only files starting with '3' or uppercase letters
+    s0Files = [];
+    for k = 1:length(allS0Files)
+        firstChar = allS0Files(k).name(1);
+        if firstChar == '3' || (firstChar >= 'A' && firstChar <= 'Z')
+            s0Files = [s0Files; allS0Files(k)];
+        end
+    end
+    
     if isempty(s0Files)
         disp('S0 file not found');
         dtiFiles=[];
@@ -37,11 +47,21 @@ function [dtiFiles, success] = getDTIFiles(inputDataFolder)
     % Add the S0 file to the struct
     dtiFiles.S0 = fullfile(s0Files(1).folder, s0Files(1).name);
     
-    % Find the other DTI files
-    otherFiles = dir(fullfile(dtiFolderPath, '3*_ECC_*.nii'));
+    % Find all DTI files (broad search)
+    allDTIFiles = dir(fullfile(dtiFolderPath, '*_ECC_*.nii'));
     
-    % Filter out the S0 file
-    otherFiles = otherFiles(~strcmp({otherFiles.name}, s0Files(1).name));
+    % Filter to keep only files starting with '3' or uppercase letters
+    % and exclude the S0 file
+    otherFiles = [];
+    for k = 1:length(allDTIFiles)
+        firstChar = allDTIFiles(k).name(1);
+        if firstChar == '3' || (firstChar >= 'A' && firstChar <= 'Z')
+            % Exclude the S0 file
+            if ~strcmp(allDTIFiles(k).name, s0Files(1).name)
+                otherFiles = [otherFiles; allDTIFiles(k)];
+            end
+        end
+    end
     
     % Add the other DTI files to the struct
     for i = 1:length(otherFiles)

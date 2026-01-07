@@ -14,8 +14,17 @@ function [noddiFiles, success] = getNODDIFiles(inputDataFolder)
         return;
     end
     
-    % Find the NODDI files
-    noddiFilesList = dir(fullfile(noddiFolderPath, '3*-NODDI_*.nii'));
+    % Find all NODDI files (broad search)
+    allNoddiFiles = dir(fullfile(noddiFolderPath, '*-NODDI_*.nii'));
+    
+    % Filter to keep only files starting with '3' or uppercase letters
+    noddiFilesList = [];
+    for k = 1:length(allNoddiFiles)
+        firstChar = allNoddiFiles(k).name(1);
+        if firstChar == '3' || (firstChar >= 'A' && firstChar <= 'Z')
+            noddiFilesList = [noddiFilesList; allNoddiFiles(k)];
+        end
+    end
     
     if isempty(noddiFilesList)
         disp('NODDI files not found');
