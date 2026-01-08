@@ -171,19 +171,22 @@ function run_cat12_segmentation(newdir, t1wfiles)
     matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.thalamic_nuclei = 0;    
     matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.suit = 0;
     matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.ibsr = 0;
+    matlabbatch{1}.spm.tools.cat.estwrite.output.ROImenu.atlases.aal3 = 1;
     
     % Tissue segmentation outputs
     matlabbatch{1}.spm.tools.cat.estwrite.output.GM.native = 1;
     matlabbatch{1}.spm.tools.cat.estwrite.output.GM.warped = 1;
-    matlabbatch{1}.spm.tools.cat.estwrite.output.GM.mod = 0;
+    matlabbatch{1}.spm.tools.cat.estwrite.output.GM.mod = 1;
     matlabbatch{1}.spm.tools.cat.estwrite.output.GM.dartel = 0;
+
     matlabbatch{1}.spm.tools.cat.estwrite.output.WM.native = 1;
     matlabbatch{1}.spm.tools.cat.estwrite.output.WM.warped = 1;
-    matlabbatch{1}.spm.tools.cat.estwrite.output.WM.mod = 0;
+    matlabbatch{1}.spm.tools.cat.estwrite.output.WM.mod = 1;
     matlabbatch{1}.spm.tools.cat.estwrite.output.WM.dartel = 0;
+    
     matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.native = 1;
-    matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.warped = 0;
-    matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.mod = 0;
+    matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.warped = 1;
+    matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.mod = 1;
     matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.dartel = 0;
     
     % Other outputs (disabled)
@@ -206,7 +209,7 @@ function run_cat12_segmentation(newdir, t1wfiles)
     matlabbatch{1}.spm.tools.cat.estwrite.output.TPMC.mod = 0;
     matlabbatch{1}.spm.tools.cat.estwrite.output.TPMC.dartel = 0;
     matlabbatch{1}.spm.tools.cat.estwrite.output.atlas.native = 0;
-    matlabbatch{1}.spm.tools.cat.estwrite.output.label.native = 1;
+    matlabbatch{1}.spm.tools.cat.estwrite.output.label.native = 0;
     matlabbatch{1}.spm.tools.cat.estwrite.output.label.warped = 0;
     matlabbatch{1}.spm.tools.cat.estwrite.output.label.dartel = 0;
     matlabbatch{1}.spm.tools.cat.estwrite.output.labelnative = 1;

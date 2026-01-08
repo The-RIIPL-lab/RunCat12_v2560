@@ -33,6 +33,7 @@ function [aslFiles, success] = getASLFiles(inputDataFolder)
         
         % Find all CBF files (broad search)
         allCBFFiles = dir(fullfile(aslFolderPath, '*_CBF*.nii'));
+        allCVRFiles = dir(fullfile(aslFolderPath, '*_CVR*.nii'));
         
         % Filter to keep only files starting with '3' or uppercase letters (A-Z)
         % This excludes files starting with lowercase like r, m, w
@@ -44,6 +45,17 @@ function [aslFiles, success] = getASLFiles(inputDataFolder)
                 % Also exclude the M0_masked file if it matches
                 if ~strcmp(allCBFFiles(k).name, m0Files(1).name)
                     otherFiles = [otherFiles; allCBFFiles(k)];
+                end
+            end
+        end
+
+        for k = 1:length(allCVRFiles)
+            firstChar = allCVRFiles(k).name(1);
+            % Check if first character is '3' or uppercase letter
+            if firstChar == '3' || (firstChar >= 'A' && firstChar <= 'Z')
+                % Also exclude the M0_masked file if it matches
+                if ~strcmp(allCVRFiles(k).name, m0Files(1).name)
+                    otherFiles = [otherFiles; allCVRFiles(k)];
                 end
             end
         end
