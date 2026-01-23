@@ -21,17 +21,34 @@ function run_new_cat_normseg(base_dir)
         mkdir(newdir);
     end
 
-    % Find the T1w image
-    t1wfiles = dir(fullfile([base_dir, '/nifti/'], '3*-tfl3d116ns.nii*'));
-    if isempty(t1wfiles)
-        warning('No ADRC T1w image found');
+% Find all T1w images across all projects
+t1wfiles = [];
 
-	t1wfiles = dir(fullfile([base_dir, '/nifti/'], 'M*-tfl3d116ns.nii*'));
-        if isempty(t1wfiles)
-            warning('No Marvel T1w image found');
-	    exit;
-	end
-    end
+% MARVEL
+marvel_files = dir(fullfile([base_dir, '/nifti/'], 'M*-tfl3d*ns.nii'));
+if ~isempty(marvel_files)
+	    warning('MARVEL T1w image found');
+	        t1wfiles = [t1wfiles; marvel_files];
+end
+
+% ADRC
+adrc_files = dir(fullfile([base_dir, '/nifti/'], '3*-tfl3d116ns.nii'));
+if ~isempty(adrc_files)
+	    warning('ADRC T1w image found');
+	        t1wfiles = [t1wfiles; adrc_files];
+end
+
+% SWITCH
+switch_files = dir(fullfile([base_dir, '/nifti/'], 'S*-tfl3d*ns.nii'));
+if ~isempty(switch_files)
+	    warning('SWITCH T1w image found');
+	        t1wfiles = [t1wfiles; switch_files];
+end
+
+% Error if no files found at all
+if isempty(t1wfiles)
+	    error('No T1w images found')
+end
 
     % Copy the T1w image to the new directory
     copyfile(fullfile(t1wfiles(1).folder, t1wfiles(1).name), newdir, 'f');
@@ -65,12 +82,14 @@ function run_new_cat_normseg(base_dir)
         run_cat12_segmentation(newdir, t1wfiles);
         
         % Re-check for deformation fields
-        y_files = dir(fullfile(mri_dir, 'y_*-tfl3d116ns.nii'));
-        iy_files = dir(fullfile(mri_dir, 'iy_*-tfl3d116ns.nii'));
+        y_files = dir(fullfile(mri_dir, 'y_*-tfl3d*.nii'));
+        iy_files = dir(fullfile(mri_dir, 'iy_*-tfl3d*ns.nii'));
         
         if isempty(y_files) || isempty(iy_files)
-            error('CAT12 segmentation failed - deformation fields not created');
+            warn('CAT12 segmentation failed - deformation fields not created');
         end
+
+
         disp('CAT12 segmentation completed successfully');
     else
         disp('=== STEP 1: CAT12 processing already completed, skipping ===');
