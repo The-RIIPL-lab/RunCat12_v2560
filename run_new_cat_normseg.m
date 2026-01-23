@@ -10,6 +10,9 @@ function run_new_cat_normseg(base_dir)
     % Updated atlas list including hypothalamic atlas
     label_map_path='/isilon/datalake/riipl/original/DEMONco/Hellcat-12.9/libs/spm12/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/';
     label_maps_files = {'neuromorphometrics.nii','aal3.nii','cobra.nii','hammers.nii','lpba40.nii','ibsr.nii','JHU.nii','brainmask_T1.nii','hypothalamusAtlas.nii'};
+    
+    % Template path for QC
+    template_path = '/isilon/datalake/riipl/original/DEMONco/Hellcat-12.9/libs/spm12/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_0_GS.nii';
 
     % Initialize SPM
     spm('defaults', 'FMRI');
@@ -19,6 +22,12 @@ function run_new_cat_normseg(base_dir)
     newdir = fullfile(base_dir, 'nifti', 'cat12_v2560');
     if ~exist(newdir, 'dir')
         mkdir(newdir);
+    end
+    
+    % Create QC directory
+    qc_dir = fullfile(newdir, 'QC_registration');
+    if ~exist(qc_dir, 'dir')
+        mkdir(qc_dir);
     end
 
 % Find all T1w images across all projects
@@ -62,6 +71,7 @@ end
     disp(sprintf('Subject dir: %s', base_dir));
     disp(sprintf('MRI dir: %s', mri_dir));
     disp(sprintf('Input T1: %s', fullfile(newdir, t1wfiles(end).name)));
+    disp(sprintf('QC dir: %s', qc_dir));
     disp('========================================');
 
     % Get DTI, NODDI, and ASL files
@@ -98,7 +108,7 @@ end
     % Step 2: Process DTI
     if dti_success
         disp('=== STEP 2: Processing DTI ===');
-        success = process_dti_data(dti_struct, mri_dir, t1wfiles, newdir, y_files);
+        success = process_dti_data(dti_struct, mri_dir, t1wfiles, newdir, y_files, qc_dir, template_path);
         if ~success
             warning('DTI processing failed - continuing with other modalities');
         else
@@ -111,7 +121,7 @@ end
     % Step 3: Process NODDI
     if noddi_success
         disp('=== STEP 3: Processing NODDI ===');
-        success = process_noddi_data(noddi_struct, mri_dir, t1wfiles, newdir, y_files);
+        success = process_noddi_data(noddi_struct, mri_dir, t1wfiles, newdir, y_files, qc_dir, template_path);
         if ~success
             warning('NODDI processing failed - continuing with other modalities');
         else
@@ -124,7 +134,7 @@ end
     % Step 4: Process ASL
     if asl_success
         disp('=== STEP 4: Processing ASL ===');
-        success = process_asl_data(asl_struct, mri_dir, t1wfiles, newdir, y_files);
+        success = process_asl_data(asl_struct, mri_dir, t1wfiles, newdir, y_files, qc_dir, template_path);
         if ~success
             warning('ASL processing failed - continuing with atlas processing');
         else
@@ -141,7 +151,7 @@ end
     disp('Atlas processing completed successfully');
 
     % Print summary
-    print_processing_summary(newdir, mri_dir, dti_success, noddi_success, asl_success);
+    print_processing_summary(newdir, mri_dir, dti_success, noddi_success, asl_success, qc_dir);
     
     disp('========================================');
     disp('=== ALL PROCESSING COMPLETE ===');
@@ -245,7 +255,7 @@ function run_cat12_segmentation(newdir, t1wfiles)
 end
 
 %% DTI Processing Function
-function success = process_dti_data(dti_struct, mri_dir, t1wfiles, newdir, y_files)
+function success = process_dti_data(dti_struct, mri_dir, t1wfiles, newdir, y_files, qc_dir, template_path)
     success = false;
     
     try
@@ -306,6 +316,9 @@ function success = process_dti_data(dti_struct, mri_dir, t1wfiles, newdir, y_fil
         end
         disp('  DTI coregistration successful');
         
+        % QC: Native T1 vs Native DTI
+        generate_reg_qc(t1_native, coreg_ref, fullfile(qc_dir, 'QC_DTI_vs_T1_Native.png'));
+        
         % === NEW STEP: Move native-space (r*) files ===
         disp('  Moving native-space DTI (r*) files...');
         dti_native_dir = fullfile(mri_dir, 'DTI_native');
@@ -362,6 +375,10 @@ function success = process_dti_data(dti_struct, mri_dir, t1wfiles, newdir, y_fil
         end
         
         disp('  DTI normalization successful');
+        
+        % QC: Template vs Normalized DTI
+        generate_reg_qc(template_path, norm_ref, fullfile(qc_dir, 'QC_DTI_vs_Template.png'));
+        
         success = true;
         
     catch ME
@@ -375,7 +392,7 @@ function success = process_dti_data(dti_struct, mri_dir, t1wfiles, newdir, y_fil
 end
 
 %% NODDI Processing Function
-function success = process_noddi_data(noddi_struct, mri_dir, t1wfiles, newdir, y_files)
+function success = process_noddi_data(noddi_struct, mri_dir, t1wfiles, newdir, y_files, qc_dir, template_path)
     success = false;
     
     try
@@ -436,6 +453,9 @@ function success = process_noddi_data(noddi_struct, mri_dir, t1wfiles, newdir, y
         end
         disp('  NODDI coregistration successful');
         
+        % QC: Native T1 vs Native NODDI
+        generate_reg_qc(t1_native, coreg_ref, fullfile(qc_dir, 'QC_NODDI_vs_T1_Native.png'));
+        
         % === NEW STEP: Move native-space (r*) files ===
         disp('  Moving native-space NODDI (r*) files...');
         noddi_native_dir = fullfile(mri_dir, 'NODDI_native');
@@ -492,6 +512,10 @@ function success = process_noddi_data(noddi_struct, mri_dir, t1wfiles, newdir, y
         end
         
         disp('  NODDI normalization successful');
+        
+        % QC: Template vs Normalized NODDI
+        generate_reg_qc(template_path, norm_ref, fullfile(qc_dir, 'QC_NODDI_vs_Template.png'));
+        
         success = true;
         
     catch ME
@@ -505,7 +529,7 @@ function success = process_noddi_data(noddi_struct, mri_dir, t1wfiles, newdir, y
 end
 
 %% ASL Processing Function
-function success = process_asl_data(asl_struct, mri_dir, t1wfiles, newdir, y_files)
+function success = process_asl_data(asl_struct, mri_dir, t1wfiles, newdir, y_files, qc_dir, template_path)
     success = false;
     
     try
@@ -577,6 +601,9 @@ function success = process_asl_data(asl_struct, mri_dir, t1wfiles, newdir, y_fil
             end
             disp(sprintf('  ASL dataset %d coregistration successful', asl_idx));
             
+            % QC: Native T1 vs Native ASL
+            generate_reg_qc(t1_native, coreg_ref, fullfile(qc_dir, sprintf('QC_ASL_Run%d_vs_T1_Native.png', asl_idx)));
+            
             % === NEW STEP: Move native-space (r*) files ===
             disp(sprintf('  Moving native-space ASL (r*) files for dataset %d...', asl_idx));
             % Create a unique directory for each ASL run
@@ -634,6 +661,9 @@ function success = process_asl_data(asl_struct, mri_dir, t1wfiles, newdir, y_fil
             end
             
             disp(sprintf('  ASL dataset %d normalization successful', asl_idx));
+            
+            % QC: Template vs Normalized ASL
+            generate_reg_qc(template_path, norm_ref, fullfile(qc_dir, sprintf('QC_ASL_Run%d_vs_Template.png', asl_idx)));
         end
         
         disp('  All ASL datasets processed successfully');
@@ -715,13 +745,14 @@ function process_atlases_to_native(label_map_path, label_maps_files, iy_files, n
 end
 
 %% Summary Function
-function print_processing_summary(newdir, mri_dir, dti_success, noddi_success, asl_success)
+function print_processing_summary(newdir, mri_dir, dti_success, noddi_success, asl_success, qc_dir)
     disp('');
     disp('========================================');
     disp('=== PROCESSING SUMMARY ===');
     disp('========================================');
     disp(sprintf('Output directory: %s', newdir));
     disp(sprintf('MRI outputs: %s', mri_dir));
+    disp(sprintf('QC outputs: %s', qc_dir));
     disp('');
     
     if dti_success
@@ -775,5 +806,24 @@ function print_processing_summary(newdir, mri_dir, dti_success, noddi_success, a
     disp('Usage Notes:');
     disp('  For native space analysis: Use r* files (now in *_native dirs) with w* atlas files');
     disp('  For template space analysis: Use wr* files with original template atlases');
+    disp('  Check QC_registration/ folder for registration quality control images');
     disp('========================================');
+end
+
+%% QC Generation Function
+function generate_reg_qc(ref_img, source_img, output_filename)
+    disp(sprintf('    Generating QC image: %s', output_filename));
+    try
+        % Make sure Graphics window is available
+        spm_figure('GetWin', 'Graphics');
+        spm_figure('Clear', 'Graphics');
+        
+        % Check registration - this displays the images in orthogonal views
+        spm_check_registration(char({ref_img, source_img}));
+        
+        % Print to file
+        print(gcf, output_filename, '-dpng', '-r150');
+    catch ME
+        warning('Failed to generate QC image: %s', ME.message);
+    end
 end
