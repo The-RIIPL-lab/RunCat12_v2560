@@ -316,9 +316,6 @@ function success = process_dti_data(dti_struct, mri_dir, t1wfiles, newdir, y_fil
         end
         disp('  DTI coregistration successful');
         
-        % QC: Native T1 vs Native DTI
-        generate_reg_qc(t1_native, coreg_ref, fullfile(qc_dir, 'QC_DTI_vs_T1_Native.png'));
-        
         % === NEW STEP: Move native-space (r*) files ===
         disp('  Moving native-space DTI (r*) files...');
         dti_native_dir = fullfile(mri_dir, 'DTI_native');
@@ -345,6 +342,11 @@ function success = process_dti_data(dti_struct, mri_dir, t1wfiles, newdir, y_fil
             end
             
             coregistered_dti_files{i} = new_r_file_path; % Update path for normalization
+            
+            % QC: Native T1 vs Native DTI (Each file)
+            [~, fname_raw] = fileparts(dti_files{i});
+            qc_name = sprintf('QC_DTI_%s_vs_T1_Native.png', fname_raw);
+            generate_reg_qc(t1_native, new_r_file_path, fullfile(qc_dir, qc_name));
         end
         disp(sprintf('  Successfully moved %d files to %s', length(dti_files), dti_native_dir));
         % === END NEW STEP ===
@@ -376,8 +378,18 @@ function success = process_dti_data(dti_struct, mri_dir, t1wfiles, newdir, y_fil
         
         disp('  DTI normalization successful');
         
-        % QC: Template vs Normalized DTI
-        generate_reg_qc(template_path, norm_ref, fullfile(qc_dir, 'QC_DTI_vs_Template.png'));
+        % QC: Template vs Normalized DTI (All files)
+        disp('    Generating QC images for normalized DTI files...');
+        for i = 1:length(coregistered_dti_files)
+             [~, fname, fext] = fileparts(coregistered_dti_files{i});
+             norm_file = fullfile(dti_norm_dir, ['w' fname fext]);
+             
+             % Use original filename for QC name
+             [~, fname_raw] = fileparts(dti_files{i});
+             qc_name = sprintf('QC_DTI_%s_vs_Template.png', ['w' fname_raw]);
+             
+             generate_reg_qc(template_path, norm_file, fullfile(qc_dir, qc_name));
+        end
         
         success = true;
         
@@ -453,9 +465,6 @@ function success = process_noddi_data(noddi_struct, mri_dir, t1wfiles, newdir, y
         end
         disp('  NODDI coregistration successful');
         
-        % QC: Native T1 vs Native NODDI
-        generate_reg_qc(t1_native, coreg_ref, fullfile(qc_dir, 'QC_NODDI_vs_T1_Native.png'));
-        
         % === NEW STEP: Move native-space (r*) files ===
         disp('  Moving native-space NODDI (r*) files...');
         noddi_native_dir = fullfile(mri_dir, 'NODDI_native');
@@ -482,6 +491,11 @@ function success = process_noddi_data(noddi_struct, mri_dir, t1wfiles, newdir, y
             end
             
             coregistered_noddi_files{i} = new_r_file_path; % Update path for normalization
+            
+            % QC: Native T1 vs Native NODDI (Each file)
+            [~, fname_raw] = fileparts(noddi_files{i});
+            qc_name = sprintf('QC_NODDI_%s_vs_T1_Native.png', fname_raw);
+            generate_reg_qc(t1_native, new_r_file_path, fullfile(qc_dir, qc_name));
         end
         disp(sprintf('  Successfully moved %d files to %s', length(noddi_files), noddi_native_dir));
         % === END NEW STEP ===
@@ -513,8 +527,18 @@ function success = process_noddi_data(noddi_struct, mri_dir, t1wfiles, newdir, y
         
         disp('  NODDI normalization successful');
         
-        % QC: Template vs Normalized NODDI
-        generate_reg_qc(template_path, norm_ref, fullfile(qc_dir, 'QC_NODDI_vs_Template.png'));
+        % QC: Template vs Normalized NODDI (All files)
+        disp('    Generating QC images for normalized NODDI files...');
+        for i = 1:length(coregistered_noddi_files)
+             [~, fname, fext] = fileparts(coregistered_noddi_files{i});
+             norm_file = fullfile(noddi_norm_dir, ['w' fname fext]);
+             
+             % Use original filename for QC name
+             [~, fname_raw] = fileparts(noddi_files{i});
+             qc_name = sprintf('QC_NODDI_%s_vs_Template.png', ['w' fname_raw]);
+             
+             generate_reg_qc(template_path, norm_file, fullfile(qc_dir, qc_name));
+        end
         
         success = true;
         
@@ -601,9 +625,6 @@ function success = process_asl_data(asl_struct, mri_dir, t1wfiles, newdir, y_fil
             end
             disp(sprintf('  ASL dataset %d coregistration successful', asl_idx));
             
-            % QC: Native T1 vs Native ASL
-            generate_reg_qc(t1_native, coreg_ref, fullfile(qc_dir, sprintf('QC_ASL_Run%d_vs_T1_Native.png', asl_idx)));
-            
             % === NEW STEP: Move native-space (r*) files ===
             disp(sprintf('  Moving native-space ASL (r*) files for dataset %d...', asl_idx));
             % Create a unique directory for each ASL run
@@ -631,6 +652,11 @@ function success = process_asl_data(asl_struct, mri_dir, t1wfiles, newdir, y_fil
                 end
                 
                 coregistered_asl_files{i} = new_r_file_path; % Update path for normalization
+                
+                % QC: Native T1 vs Native ASL (Each file)
+                [~, fname_raw] = fileparts(asl_files_current{i});
+                qc_name = sprintf('QC_ASL_Run%d_%s_vs_T1_Native.png', asl_idx, fname_raw);
+                generate_reg_qc(t1_native, new_r_file_path, fullfile(qc_dir, qc_name));
             end
             disp(sprintf('  Successfully moved %d files to %s', length(asl_files_current), asl_native_dir));
             % === END NEW STEP ===
@@ -662,8 +688,18 @@ function success = process_asl_data(asl_struct, mri_dir, t1wfiles, newdir, y_fil
             
             disp(sprintf('  ASL dataset %d normalization successful', asl_idx));
             
-            % QC: Template vs Normalized ASL
-            generate_reg_qc(template_path, norm_ref, fullfile(qc_dir, sprintf('QC_ASL_Run%d_vs_Template.png', asl_idx)));
+            % QC: Template vs Normalized ASL (All files)
+            disp(sprintf('    Generating QC images for normalized ASL dataset %d...', asl_idx));
+            for i = 1:length(coregistered_asl_files)
+                 [~, fname, fext] = fileparts(coregistered_asl_files{i});
+                 norm_file = fullfile(asl_norm_dir, ['w' fname fext]);
+                 
+                 % Use original filename for QC name
+                 [~, fname_raw] = fileparts(asl_files_current{i});
+                 qc_name = sprintf('QC_ASL_Run%d_%s_vs_Template.png', asl_idx, ['w' fname_raw]);
+                 
+                 generate_reg_qc(template_path, norm_file, fullfile(qc_dir, qc_name));
+            end
         end
         
         disp('  All ASL datasets processed successfully');
