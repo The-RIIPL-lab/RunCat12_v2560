@@ -1,4 +1,7 @@
-function run_new_cat_normseg(base_dir)
+function run_new_cat_normseg(base_dir, output_root)
+    if nargin < 2
+        output_root = '';
+    end
     % NATIVE-SPACE LABELMAP EXPORT: This script creates native-space labelmaps
     % in Step 5 using the process_atlases_to_native() function.
     % Output files will have 'w' prefix (e.g., wneuromorphometrics.nii)
@@ -18,8 +21,23 @@ function run_new_cat_normseg(base_dir)
     spm('defaults', 'FMRI');
     spm_jobman('initcfg');
 
-    % Create the new directory
-    newdir = fullfile(base_dir, 'nifti', 'cat12_v2560');
+    % Detect CAT12 build number for output folder naming
+    try
+        [~, cat_build] = cat_version();
+        cat_folder_name = sprintf('cat12_v%s', cat_build);
+    catch
+        cat_folder_name = 'cat12_v2560';  % fallback if detection fails
+    end
+
+    % Determine output root: separate dir or same as input
+    if isempty(output_root)
+        newdir = fullfile(base_dir, 'nifti', cat_folder_name);
+    else
+        % Extract session name robustly (handles trailing slashes)
+        base_dir_clean = regexprep(base_dir, '[/\\]+$', '');
+        [~, session_name] = fileparts(base_dir_clean);
+        newdir = fullfile(output_root, session_name, 'nifti', cat_folder_name);
+    end
     if ~exist(newdir, 'dir')
         mkdir(newdir);
     end
@@ -69,6 +87,8 @@ end
 
     disp('========================================');
     disp(sprintf('Subject dir: %s', base_dir));
+    disp(sprintf('Output folder: %s', cat_folder_name));
+    disp(sprintf('Output dir: %s', newdir));
     disp(sprintf('MRI dir: %s', mri_dir));
     disp(sprintf('Input T1: %s', fullfile(newdir, t1wfiles(end).name)));
     disp(sprintf('QC dir: %s', qc_dir));

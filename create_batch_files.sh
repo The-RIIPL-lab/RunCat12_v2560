@@ -13,6 +13,10 @@ fi
 # Get the base name of the input directory
 base_name=$(basename $1)
 
+# Optional second argument: separate output root directory
+# If not provided, outputs are written next to inputs (original behavior)
+output_root="${2:-}"
+
 # Create a sbatch file in the jobs folder
 cat << EOF > jobs/CAT_${base_name}.sbatch
 #!/bin/tcsh
@@ -28,6 +32,6 @@ cat << EOF > jobs/CAT_${base_name}.sbatch
 #SBATCH -W
 module load matlab
 cd /home/richard/RunCat12_v2560 # Updated by install.sh
-matlab -r "run_new_cat_normseg('$1'); exit;"
+matlab -r "run_new_cat_normseg('$1', '$output_root'); exit;"
 wait
 EOF
