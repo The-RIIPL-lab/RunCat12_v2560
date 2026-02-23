@@ -27,7 +27,7 @@ cat << EOF > jobs/CAT_${base_name}.sbatch
 #SBATCH -A ansir-users  # UPDATE THIS!
 #SBATCH -W
 module load matlab
-cd /isilon/datalake/riipl/original/DEMONco/Hellcat-12.9/ # UPDATE THIS
+cd /home/richard/RunCat12_v2560 # Updated by install.sh
 matlab -r "run_new_cat_normseg('$1'); exit;"
 wait
 EOF

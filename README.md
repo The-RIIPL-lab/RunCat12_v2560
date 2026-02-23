@@ -31,6 +31,50 @@ The `create_batch_files.sh` script will require some customization:
 *   Update the script path to point to your specific setup.
 *   Add your HPC account name.
 
+## Creating and Submitting Batch Jobs
+
+### Quick setup
+
+Run the install script once to download SPM12 + CAT12 and patch all hardcoded paths:
+
+```bash
+bash install.sh
+```
+
+After that, open `create_batch_files.sh` and update the one line that cannot be auto-detected:
+
+```
+#SBATCH -A ansir-users   →   #SBATCH -A <your-hpc-account>
+```
+
+### Using create_batch_files.sh
+
+The script takes a single subject directory as its argument and writes a
+ready-to-submit SLURM `.sbatch` file into a `jobs/` folder:
+
+```bash
+bash ./create_batch_files.sh /path/to/project/SUBJECT_ID
+```
+
+To process a list of subjects in bulk (skipping any already processed):
+
+```bash
+for x in $(cat ./subject_lists/my_subjects.txt); do
+    if [ -d "/project/${x}" ] && [ ! -d "/project/${x}/nifti/cat12_v2560" ]; then
+        bash ./create_batch_files.sh "/project/${x}"
+    fi
+done
+```
+
+This creates one `.sbatch` file per subject in `jobs/`.
+To submit all jobs (10 at a time) in a tmux session:
+
+```bash
+cd jobs && ls | grep sbatch | xargs -I {} -P 10 sbatch -W {}
+```
+
+Logs are written to the `logs/` directory (one `.out` and `.err` per subject).
+
 ## Usage
 
 1.  Customize the `create_batch_files.sh` script as described above.

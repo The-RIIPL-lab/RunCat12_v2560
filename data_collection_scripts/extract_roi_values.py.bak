@@ -21,7 +21,7 @@ import argparse
 
 # Template atlas path for normalized diffusion analysis
 # UPDATE THIS
-HYPOTHALAMUS_ATLAS_PATH = "/home/richard/RunCat12_v2560/libs/spm12/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/hypothalamusAtlas.nii"
+HYPOTHALAMUS_ATLAS_PATH = "/isilon/datalake/riipl/original/DEMONco/Hellcat-12.9/resampled_template_ROIs/rhypothalamusAtlas_template_v2.nii"
 
 
 def load_nifti_data(filepath):
