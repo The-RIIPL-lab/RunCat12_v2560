@@ -31,7 +31,7 @@ cat << EOF > jobs/CAT_${base_name}.sbatch
 #SBATCH -A ansir-users  # UPDATE THIS!
 #SBATCH -W
 module load matlab
-cd /home/richard/RunCat12_v2560 # Updated by install.sh
-matlab -r "run_new_cat_normseg('$1', '$output_root'); exit;"
+cd /home/richard/RunCat12 # Updated by install.sh
+matlab -r "addpath('/home/richard/RunCat12/libs/spm12/spm12'); run_new_cat_normseg('$1', '$output_root'); exit;"
 wait
 EOF

@@ -95,15 +95,30 @@ fi
 # 6. Patch create_batch_files.sh
 # ---------------------------------------------------------------------------
 BATCH_FILE="$REPO_DIR/create_batch_files.sh"
-OLD_CD="cd /isilon/datalake/riipl/original/DEMONco/Hellcat-12.9/ # UPDATE THIS"
 
-if grep -qF "$OLD_CD" "$BATCH_FILE"; then
-    cp "$BATCH_FILE" "${BATCH_FILE}.bak"
-    sed -i "s|${OLD_CD}|cd ${REPO_DIR} # Updated by install.sh|" "$BATCH_FILE"
-    echo "[ok] Patched $BATCH_FILE (backup: ${BATCH_FILE}.bak)"
+cp "$BATCH_FILE" "${BATCH_FILE}.bak"
+
+# Patch the cd line — matches both the original placeholder and any previously-patched line
+if grep -qE "cd .* # (UPDATE THIS|Updated by install\.sh)" "$BATCH_FILE"; then
+    sed -i "s|cd .* # .*|cd ${REPO_DIR} # Updated by install.sh|" "$BATCH_FILE"
+    echo "[ok] Patched cd path in $BATCH_FILE"
 else
-    echo "[skip] $BATCH_FILE — old cd path not found (already patched?)"
+    echo "[warn] $BATCH_FILE — cd line not found in expected format; skipping cd patch"
 fi
+
+# Patch the matlab command to include SPM12 addpath
+if grep -q "addpath.*run_new_cat_normseg" "$BATCH_FILE"; then
+    # Already has addpath — update the path in place
+    sed -i "s|addpath('[^']*'); run_new_cat_normseg|addpath('${SPM_DIR}'); run_new_cat_normseg|g" "$BATCH_FILE"
+    echo "[ok] Updated SPM12 addpath in matlab command in $BATCH_FILE"
+elif grep -q 'matlab -r "run_new_cat_normseg' "$BATCH_FILE"; then
+    # No addpath yet — insert it before run_new_cat_normseg
+    sed -i "s|matlab -r \"run_new_cat_normseg|matlab -r \"addpath('${SPM_DIR}'); run_new_cat_normseg|g" "$BATCH_FILE"
+    echo "[ok] Added SPM12 addpath to matlab command in $BATCH_FILE"
+else
+    echo "[warn] $BATCH_FILE — matlab command not found in expected format; skipping addpath patch"
+fi
+echo "       (backup: ${BATCH_FILE}.bak)"
 
 # ---------------------------------------------------------------------------
 # 7. Patch data_collection_scripts/extract_roi_values.py
