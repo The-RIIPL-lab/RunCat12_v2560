@@ -6,16 +6,18 @@ function run_new_cat_normseg(base_dir, output_root)
     % in Step 5 using the process_atlases_to_native() function.
     % Output files will have 'w' prefix (e.g., wneuromorphometrics.nii)
 
-    % Add SPM12 and CAT12 to the MATLAB path
-    addpath('/home/richard/RunCat12_v2560/libs/spm12/spm12/');
-    addpath('/home/richard/RunCat12_v2560/');
+    % Determine repo root from this file's location (works regardless of where repo is cloned)
+    repo_root = fileparts(mfilename('fullpath'));
+    spm_dir   = fullfile(repo_root, 'libs', 'spm12', 'spm12');
+    addpath(spm_dir);
+    addpath(repo_root);
 
     % Updated atlas list including hypothalamic atlas
-    label_map_path='/home/richard/RunCat12_v2560/libs/spm12/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/';
+    label_map_path = fullfile(spm_dir, 'toolbox', 'cat12', 'templates_MNI152NLin2009cAsym', '');
     label_maps_files = {'neuromorphometrics.nii','aal3.nii','cobra.nii','hammers.nii','lpba40.nii','ibsr.nii','JHU.nii','brainmask_T1.nii','hypothalamusAtlas.nii'};
-    
+
     % Template path for QC
-    template_path = '/home/richard/RunCat12_v2560/libs/spm12/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_0_GS.nii';
+    template_path = fullfile(spm_dir, 'toolbox', 'cat12', 'templates_MNI152NLin2009cAsym', 'Template_0_GS.nii');
 
     % Initialize SPM
     spm('defaults', 'FMRI');
@@ -188,7 +190,7 @@ function run_cat12_segmentation(newdir, t1wfiles)
     matlabbatch{1}.spm.tools.cat.estwrite.data = {fullfile(newdir, t1wfiles(end).name)};
     matlabbatch{1}.spm.tools.cat.estwrite.nproc = 8;
     matlabbatch{1}.spm.tools.cat.estwrite.useprior = '';
-    matlabbatch{1}.spm.tools.cat.estwrite.opts.tpm = {'/home/richard/RunCat12_v2560/libs/spm12/spm12/tpm/TPM.nii'};
+    matlabbatch{1}.spm.tools.cat.estwrite.opts.tpm = {fullfile(spm_dir, 'tpm', 'TPM.nii')};
     matlabbatch{1}.spm.tools.cat.estwrite.opts.affreg = 'mni';
     matlabbatch{1}.spm.tools.cat.estwrite.opts.biasacc = 0.5;
     matlabbatch{1}.spm.tools.cat.estwrite.extopts.restypes.optimal = [1 0.3];
@@ -199,7 +201,8 @@ function run_cat12_segmentation(newdir, t1wfiles)
     matlabbatch{1}.spm.tools.cat.estwrite.extopts.LASmyostr = 0;
     matlabbatch{1}.spm.tools.cat.estwrite.extopts.gcutstr = 2;
     matlabbatch{1}.spm.tools.cat.estwrite.extopts.WMHC = 2;
-    matlabbatch{1}.spm.tools.cat.estwrite.extopts.registration.shooting.shootingtpm = {'/home/richard/RunCat12_v2560/libs/spm12/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_0_GS.nii'};
+    matlabbatch{1}.spm.tools.cat.estwrite.extopts.registration.shooting.shootingtpm = ...
+        {fullfile(spm_dir, 'toolbox', 'cat12', 'templates_MNI152NLin2009cAsym', 'Template_0_GS.nii')};
     matlabbatch{1}.spm.tools.cat.estwrite.extopts.registration.shooting.regstr = 0.5;
     matlabbatch{1}.spm.tools.cat.estwrite.extopts.vox = 1;
     matlabbatch{1}.spm.tools.cat.estwrite.extopts.bb = 12;

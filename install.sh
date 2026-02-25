@@ -78,18 +78,12 @@ cp "$REPO_DIR/resampled_template_ROIs/rJHU.nii" \
 echo "[ok] ROIs copied."
 
 # ---------------------------------------------------------------------------
-# 5. Patch run_new_cat_normseg.m
+# 5. run_new_cat_normseg.m — no patching needed
 # ---------------------------------------------------------------------------
+# The .m file uses mfilename('fullpath') to compute repo_root at runtime, so
+# all paths are resolved automatically regardless of clone location.
 MATLAB_FILE="$REPO_DIR/run_new_cat_normseg.m"
-OLD_PREFIX="/isilon/datalake/riipl/original/DEMONco/Hellcat-12.9/"
-
-if grep -qF "$OLD_PREFIX" "$MATLAB_FILE"; then
-    cp "$MATLAB_FILE" "${MATLAB_FILE}.bak"
-    sed -i "s|${OLD_PREFIX}|${REPO_DIR}/|g" "$MATLAB_FILE"
-    echo "[ok] Patched $MATLAB_FILE (backup: ${MATLAB_FILE}.bak)"
-else
-    echo "[skip] $MATLAB_FILE — old prefix not found (already patched?)"
-fi
+echo "[ok] $MATLAB_FILE uses self-resolving paths — no patching required"
 
 # ---------------------------------------------------------------------------
 # 6. Patch create_batch_files.sh
@@ -147,9 +141,9 @@ echo "  Atlas : $TEMPLATES_DIR/hypothalamusAtlas.nii"
 echo "  JHU   : $TEMPLATES_DIR/JHU.nii"
 echo ""
 echo "Patched files:"
-echo "  $MATLAB_FILE"
 echo "  $BATCH_FILE"
 echo "  $PY_FILE"
+echo "  $MATLAB_FILE (self-resolving — no patch needed)"
 echo ""
 echo "ACTION REQUIRED:"
 echo "  Open create_batch_files.sh and update the SLURM account:"
