@@ -111,7 +111,7 @@ end
     % Step 1: CAT12 Segmentation and Normalization (if not already done)
     if isempty(y_files)
         disp('=== STEP 1: Running CAT12 segmentation and normalization ===');
-        run_cat12_segmentation(newdir, t1wfiles);
+        run_cat12_segmentation(newdir, t1wfiles, spm_dir);
         
         % Re-check for deformation fields
         y_files = dir(fullfile(mri_dir, 'y_*-tfl3d*.nii'));
@@ -182,7 +182,7 @@ end
 end
 
 %% CAT12 Segmentation Function
-function run_cat12_segmentation(newdir, t1wfiles)
+function run_cat12_segmentation(newdir, t1wfiles, spm_dir)
     disp('  Building CAT12 batch...');
     
     clear matlabbatch;

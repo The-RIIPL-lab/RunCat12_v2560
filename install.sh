@@ -47,7 +47,7 @@ if [ -d "$CAT_DIR" ] && [ -n "$(ls -A "$CAT_DIR")" ]; then
 else
     echo "[install] Downloading CAT12 12.8.2..."
     TMP_CAT=$(mktemp -d)
-    curl -fL "https://github.com/ChristianGaser/cat12/releases/download/12.8.2/cat12.8.2.zip" -o "$TMP_CAT/cat12.zip"
+    curl -fL "https://github.com/ChristianGaser/cat12/releases/download/12.9/cat12.9.zip" -o "$TMP_CAT/cat12.zip"
     echo "[install] Extracting CAT12..."
     unzip -q "$TMP_CAT/cat12.zip" -d "$TMP_CAT/extracted"
     rm "$TMP_CAT/cat12.zip"
