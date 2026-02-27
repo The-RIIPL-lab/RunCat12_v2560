@@ -143,14 +143,67 @@ ls | grep sbatch | xargs -I {} -P 10 sbatch -W {}
 
 ### STEP 3: Collect Data Using Python Scripts
 
-*   Create the Python environment:
-    ```bash
-    pip install -r ./data_collection_scripts/requirements.txt
-    ```
+Install the required Python packages:
 
-*   Update the `HYPOTHALAMUS_ATLAS_PATH` and `JHU_ATLAS_PATH` in the `extract_roi_values.py` script.
+```bash
+pip install -r ./data_collection_scripts/requirements.txt
+```
 
-*   Run the script:
-    ```bash
-    python ./data_collection_scripts/extract_roi_values.py <your project folder>
-    ```
+#### `extract_roi_values.py`
+
+Extracts volumes and diffusion metrics from CAT12 outputs and writes a single CSV file.
+
+**Single subject:**
+
+```bash
+python ./data_collection_scripts/extract_roi_values.py /path/to/SUBJECT_ID
+```
+
+**Batch (entire project directory):**
+
+```bash
+python ./data_collection_scripts/extract_roi_values.py --batch /path/to/project/
+```
+
+The script automatically discovers the `cat12_v*` output folder inside each
+subject's `nifti/` directory, so no path configuration is needed.
+
+**All options:**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--batch` | off | Iterate over all subdirectories of `input_path` |
+| `-o / --output` | `cat12_hypothalamus_data.csv` | Output CSV filename |
+| `--hyp-atlas` | auto (repo-relative) | Override path to the hypothalamus atlas template |
+| `--verbose` | off | Print per-subject status during batch runs |
+
+**Expected subject directory structure:**
+
+```
+SUBJECT_ID/
+└── nifti/
+    └── cat12_v<build>/          ← discovered automatically
+        ├── wbrainmask_T1.nii
+        ├── whypothalamusAtlas.nii
+        └── mri/
+            ├── p1*.nii          ← GM probability map
+            ├── p2*.nii          ← WM probability map
+            ├── p3*.nii          ← CSF probability map
+            ├── DTI_native/      ← coregistered DTI (r* prefix)
+            ├── DTI/             ← normalised DTI (wr* prefix)
+            ├── NODDI_native/    ← coregistered NODDI (r* prefix)
+            └── NODDI/           ← normalised NODDI (wr* prefix)
+```
+
+**Output columns:**
+
+| Column group | Description |
+|---|---|
+| `subject_id`, `processing_status` | Subject name and outcome |
+| `brain_mask_volume_mm3` | Whole-brain mask volume |
+| `hypothalamus_roi1_volume_mm3`, `hypothalamus_roi2_volume_mm3` | Hypothalamus left/right volumes |
+| `gm_volume_mm3`, `wm_volume_mm3`, `csf_volume_mm3` | Tissue volumes |
+| `native_DTI_{FA,MD,L1,L2,L3}_hyp_roi{1,2}_mean` | Mean DTI metrics in native-space hypothalamus |
+| `native_NODDI_{ICVF,ISOVF,OD}_hyp_roi{1,2}_mean` | Mean NODDI metrics in native-space hypothalamus |
+| `normalized_DTI_{FA,MD,L1,L2,L3}_hyp_roi{1,2}_mean` | Mean DTI metrics in template-space hypothalamus |
+| `normalized_NODDI_{ICVF,ISOVF,OD}_hyp_roi{1,2}_mean` | Mean NODDI metrics in template-space hypothalamus |

@@ -145,7 +145,7 @@ def plot_volume_distributions(df, output_dir):
     n_cols = len(volume_cols)
     n_rows = (n_cols + 2) // 3  # 3 columns per row
     fig, axes = plt.subplots(n_rows, 3, figsize=(15, 5*n_rows))
-    axes = axes.flatten() if n_rows > 1 else [axes]
+    axes = np.array(axes).flatten()
     
     for idx, col in enumerate(volume_cols):
         data = df[col].dropna()
@@ -499,11 +499,131 @@ def create_summary_report(df, output_dir):
     print(f"Saved: {output_path}")
 
 
+def detect_outliers(df, cols, iqr_multiplier=1.5):
+    """
+    Flag outlier subjects using the IQR method.
+    Returns a dict mapping column name to a list of (index, subject_id, value) tuples.
+    """
+    outliers = {}
+    for col in cols:
+        if col not in df.columns:
+            outliers[col] = []
+            continue
+        data = df[col].dropna()
+        q1 = data.quantile(0.25)
+        q3 = data.quantile(0.75)
+        iqr = q3 - q1
+        lower = q1 - iqr_multiplier * iqr
+        upper = q3 + iqr_multiplier * iqr
+        mask = df[col].notna() & ((df[col] < lower) | (df[col] > upper))
+        flagged = df[mask]
+        outliers[col] = list(zip(flagged.index, flagged['subject_id'], flagged[col]))
+    return outliers
+
+
+def plot_outlier_overview(df, output_dir, outliers):
+    """
+    Strip plots for ROI volumes, FA, and MD with outlier subjects highlighted in red.
+    Each subplot shows all subjects as dots, IQR fences as dashed lines, and
+    labels any flagged subjects by their subject_id.
+    """
+    plot_cols = [
+        ('hypothalamus_roi1_volume_mm3',    'ROI 1 Volume (mm³)'),
+        ('hypothalamus_roi2_volume_mm3',    'ROI 2 Volume (mm³)'),
+        ('native_DTI_FA_hyp_roi1_mean',     'Native FA — ROI 1'),
+        ('native_DTI_FA_hyp_roi2_mean',     'Native FA — ROI 2'),
+        ('native_DTI_MD_hyp_roi1_mean',     'Native MD — ROI 1'),
+        ('native_DTI_MD_hyp_roi2_mean',     'Native MD — ROI 2'),
+    ]
+    plot_cols = [(c, lbl) for c, lbl in plot_cols if c in df.columns]
+    if not plot_cols:
+        print("No key metric columns found for outlier plot")
+        return
+
+    ncols = 2
+    nrows = (len(plot_cols) + 1) // ncols
+    fig, axes = plt.subplots(nrows, ncols, figsize=(12, 4 * nrows))
+    axes = np.array(axes).flatten()
+
+    rng = np.random.default_rng(42)
+
+    for idx, (col, label) in enumerate(plot_cols):
+        ax = axes[idx]
+        data = df[col].dropna()
+
+        out_subjects = {sid for _, sid, _ in outliers.get(col, [])}
+        normal_mask  = df[col].notna() & ~df['subject_id'].isin(out_subjects)
+        outlier_mask = df[col].notna() &  df['subject_id'].isin(out_subjects)
+
+        x_normal  = rng.uniform(-0.2, 0.2, size=normal_mask.sum())
+        x_outlier = rng.uniform(-0.2, 0.2, size=outlier_mask.sum())
+
+        ax.scatter(x_normal,  df.loc[normal_mask,  col], alpha=0.5, color='steelblue', s=20, zorder=2)
+        ax.scatter(x_outlier, df.loc[outlier_mask, col], alpha=0.9, color='red',       s=40, zorder=3)
+
+        for xi, (_, sid, val) in zip(x_outlier, outliers.get(col, [])):
+            ax.annotate(str(sid), (xi, val), textcoords='offset points',
+                        xytext=(6, 0), fontsize=7, color='red', va='center')
+
+        q1  = data.quantile(0.25)
+        q3  = data.quantile(0.75)
+        iqr = q3 - q1
+        ax.axhline(data.median(),        color='black',  linewidth=1.2, linestyle='-',  label='Median')
+        ax.axhline(q1 - 1.5 * iqr,      color='orange', linewidth=1.0, linestyle='--', label='IQR fence')
+        ax.axhline(q3 + 1.5 * iqr,      color='orange', linewidth=1.0, linestyle='--')
+
+        ax.set_title(label)
+        ax.set_xticks([])
+        ax.grid(True, alpha=0.3, axis='y')
+        if out_subjects:
+            ax.legend(fontsize=7, loc='upper right')
+
+    for idx in range(len(plot_cols), len(axes)):
+        axes[idx].set_visible(False)
+
+    plt.suptitle('Outlier Detection — Key Metrics (IQR ×1.5)', fontsize=14)
+    plt.tight_layout()
+    output_path = Path(output_dir) / 'outlier_overview.png'
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    print(f"Saved: {output_path}")
+    plt.close()
+
+
+def save_outlier_report(outliers, output_dir):
+    """Write flagged subjects and their values to a text file."""
+    output_path = Path(output_dir) / 'outlier_report.txt'
+    all_flagged = {sid for entries in outliers.values() for _, sid, _ in entries}
+
+    with open(output_path, 'w') as f:
+        f.write("OUTLIER REPORT\n")
+        f.write("=" * 60 + "\n")
+        f.write("Method: IQR  (flags values below Q1 - 1.5*IQR or above Q3 + 1.5*IQR)\n\n")
+        if not all_flagged:
+            f.write("No outliers detected in any metric.\n")
+        else:
+            f.write(f"Total flagged subjects (across all metrics): {len(all_flagged)}\n")
+            for col, entries in outliers.items():
+                if entries:
+                    f.write(f"\n{col}\n")
+                    f.write("-" * 50 + "\n")
+                    for _, sid, val in entries:
+                        f.write(f"  {sid}: {val:.4f}\n")
+
+    print(f"Saved: {output_path}")
+    if all_flagged:
+        print(f"\nOutlier subjects detected ({len(all_flagged)} unique):")
+        for col, entries in outliers.items():
+            if entries:
+                print(f"  {col}: {[sid for _, sid, _ in entries]}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Explore and visualize CAT12 hypothalamus data (cross-sectional)'
     )
-    parser.add_argument('csv_file', help='Path to the CSV file generated by extract_roi_values.py')
+    parser.add_argument('csv_file', nargs='?', default='cat12_hypothalamus_data.csv',
+                       help='Path to the CSV file generated by extract_roi_values.py '
+                            '(default: cat12_hypothalamus_data.csv)')
     parser.add_argument('-o', '--output-dir', default='./analysis_output', 
                        help='Output directory for plots and reports')
     parser.add_argument('--no-average', action='store_true',
@@ -542,15 +662,22 @@ def main():
     plot_noddi_metrics_overview(df, output_dir, space='native')
     plot_noddi_metrics_overview(df, output_dir, space='normalized')
     
-    # Correlation matrices
-    plot_correlation_matrix(df, output_dir, 'native_dti')
-    plot_correlation_matrix(df, output_dir, 'native_noddi')
-    plot_correlation_matrix(df, output_dir, 'normalized_dti')
-    plot_correlation_matrix(df, output_dir, 'normalized_noddi')
-    
+    # Outlier detection: ROI volumes, FA, and MD only
+    outlier_metric_cols = [
+        'hypothalamus_roi1_volume_mm3',
+        'hypothalamus_roi2_volume_mm3',
+        'native_DTI_FA_hyp_roi1_mean',
+        'native_DTI_FA_hyp_roi2_mean',
+        'native_DTI_MD_hyp_roi1_mean',
+        'native_DTI_MD_hyp_roi2_mean',
+    ]
+    outliers = detect_outliers(df, outlier_metric_cols)
+    plot_outlier_overview(df, output_dir, outliers)
+    save_outlier_report(outliers, output_dir)
+
     # Create summary report
     create_summary_report(df, output_dir)
-    
+
     print("\n" + "=" * 80)
     print(f"Analysis complete! All outputs saved to: {output_dir}")
     print("=" * 80)
