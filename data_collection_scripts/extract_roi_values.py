@@ -20,8 +20,11 @@ import argparse
 
 
 # Template atlas path for normalized diffusion analysis
-# UPDATE THIS
-HYPOTHALAMUS_ATLAS_PATH = "/home/richard/RunCat12_v2560/libs/spm12/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/hypothalamusAtlas.nii"
+HYPOTHALAMUS_ATLAS_PATH = str(
+    Path(__file__).parent.parent
+    / 'libs' / 'spm12' / 'spm12' / 'toolbox' / 'cat12'
+    / 'templates_MNI152NLin2009cAsym' / 'hypothalamusAtlas.nii'
+)
 
 
 def load_nifti_data(filepath):
@@ -80,10 +83,19 @@ def extract_roi_mean_nonzero(data_img, atlas_img, roi_id):
         return np.nan
 
 
+def find_cat12_dir(subject_dir):
+    """Find the CAT12 output directory, handling different build numbers."""
+    nifti_dir = Path(subject_dir) / 'nifti'
+    candidates = sorted(nifti_dir.glob('cat12_v*'))
+    if candidates:
+        return candidates[0]
+    return nifti_dir / 'cat12_v2560'  # fallback
+
+
 def validate_subject(subject_dir):
     """Validate that a subject has the required CAT12 outputs."""
     subject_dir = Path(subject_dir)
-    cat12_dir = subject_dir / 'nifti' / 'cat12_v2560'
+    cat12_dir = find_cat12_dir(subject_dir)
     if not cat12_dir.exists():
         return False, "CAT12 output directory not found"
     
@@ -97,7 +109,7 @@ def validate_subject(subject_dir):
 def process_volumes(subject_dir):
     """Extract volume measurements from native space files."""
     results = {}
-    cat12_dir = subject_dir / 'nifti' / 'cat12_v2560'
+    cat12_dir = find_cat12_dir(subject_dir)
     
     # 1. Brain mask volume
     brain_mask_file = cat12_dir / 'wbrainmask_T1.nii'
@@ -159,7 +171,7 @@ def process_volumes(subject_dir):
 def process_native_diffusion(subject_dir):
     """Process native-space diffusion data from hypothalamus ROIs."""
     results = {}
-    cat12_dir = subject_dir / 'nifti' / 'cat12_v2560'
+    cat12_dir = find_cat12_dir(subject_dir)
     mri_dir = cat12_dir / 'mri'
     
     # Load native hypothalamus atlas
@@ -176,13 +188,11 @@ def process_native_diffusion(subject_dir):
     noddi_metrics = ['ICVF', 'ISOVF', 'OD']
     
     # Process DTI metrics
-    dti_dir = mri_dir / 'DTI'
+    dti_dir = mri_dir / 'DTI_native'
     if dti_dir.exists():
         for metric in dti_metrics:
-            # Look for native space files (without 'w' or 'wr' prefix)
+            # Native coregistered files (r* prefix) live in DTI_native/
             metric_files = list(dti_dir.glob(f'*_{metric}.nii'))
-            # Filter out warped files
-            metric_files = [f for f in metric_files if not f.name.startswith('w')]
             
             if metric_files:
                 try:
@@ -197,19 +207,16 @@ def process_native_diffusion(subject_dir):
                         results[f'native_DTI_{metric}_hyp_roi{roi_id}_mean'] = np.nan
     
     # Process NODDI metrics
-    noddi_dir = mri_dir / 'NODDI'
+    noddi_dir = mri_dir / 'NODDI_native'
     if noddi_dir.exists():
         for metric in noddi_metrics:
-            # Look for native space files
+            # Native coregistered files (r* prefix) live in NODDI_native/
             if metric == 'ICVF':
                 metric_files = list(noddi_dir.glob('*NODDI_ICVF.nii')) + list(noddi_dir.glob('*NODDI_ficvf.nii'))
             elif metric == 'ISOVF':
                 metric_files = list(noddi_dir.glob('*NODDI_ISOVF.nii')) + list(noddi_dir.glob('*NODDI_fiso.nii'))
             elif metric == 'OD':
                 metric_files = list(noddi_dir.glob('*NODDI_OD.nii')) + list(noddi_dir.glob('*NODDI_odi.nii'))
-            
-            # Filter out warped files
-            metric_files = [f for f in metric_files if not f.name.startswith('w')]
             
             if metric_files:
                 try:
@@ -233,13 +240,13 @@ def process_normalized_diffusion(subject_dir, template_hyp_atlas_data):
     if template_hyp_atlas_data is None:
         return results
     
-    cat12_dir = subject_dir / 'nifti' / 'cat12_v2560'
+    cat12_dir = find_cat12_dir(subject_dir)
     mri_dir = cat12_dir / 'mri'
-    
+
     # Define diffusion metrics
     dti_metrics = ['FA', 'MD', 'L1', 'L2', 'L3']
     noddi_metrics = ['ICVF', 'ISOVF', 'OD']
-    
+
     # Process DTI metrics
     dti_dir = mri_dir / 'DTI'
     if dti_dir.exists():
@@ -383,7 +390,7 @@ def main():
         for i, subject_dir in enumerate(subject_dirs, 1):
             try:
                 # Quick pre-check for CAT12 output
-                if not (subject_dir / 'nifti' / 'cat12_v2560').exists():
+                if not find_cat12_dir(subject_dir).exists():
                     processing_stats['skipped'] += 1
                     if args.verbose:
                         print(f"[{i:4d}/{len(subject_dirs):4d}] SKIP: {subject_dir.name} - No CAT12 output")
