@@ -141,13 +141,13 @@ def generate_qc_mosaic(subject_dir, output_path):
     mri_dir     = cat12_dir / 'mri'
 
     atlas_path = cat12_dir / 'whypothalamusAtlas.nii'
-    t1_path    = find_native_t1(mri_dir)
+    t1_path    = find_native_t1(cat12_dir)
 
     if not atlas_path.exists():
         print(f"  SKIP {subject_dir.name}: atlas not found ({atlas_path})")
         return False
     if t1_path is None:
-        print(f"  SKIP {subject_dir.name}: native T1 not found in {mri_dir}")
+        print(f"  SKIP {subject_dir.name}: native T1 not found in {cat12_dir}")
         return False
 
     t1_data  = load_canonical(t1_path)
