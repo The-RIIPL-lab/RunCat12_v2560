@@ -26,7 +26,7 @@ cat << EOF > jobs/CAT_${base_name}.sbatch
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=16G
-#SBATCH --time=20:00
+#SBATCH --time=4:00:00
 #SBATCH -p defq
 #SBATCH -A ansir-users  # UPDATE THIS!
 #SBATCH -W
