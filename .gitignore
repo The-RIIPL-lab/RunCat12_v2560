@@ -10,3 +10,4 @@ test_batch_jobs/
 brain_data_plots/*
 subject_lists/
 *.txt
+CLAUDE.md

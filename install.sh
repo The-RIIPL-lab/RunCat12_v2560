@@ -39,15 +39,15 @@ fi
 mkdir -p "$SPM_DIR/toolbox"
 
 # ---------------------------------------------------------------------------
-# 3. Download and extract CAT12 12.8.2
+# 3. Download and extract CAT12 r2560
 # ---------------------------------------------------------------------------
 CAT_DIR="$SPM_DIR/toolbox/cat12"
 if [ -d "$CAT_DIR" ] && [ -n "$(ls -A "$CAT_DIR")" ]; then
     echo "[skip] CAT12 already present at $CAT_DIR"
 else
-    echo "[install] Downloading CAT12 12.8.2..."
+    echo "[install] Downloading CAT12 r2560..."
     TMP_CAT=$(mktemp -d)
-    curl -fL "https://github.com/ChristianGaser/cat12/releases/download/12.9/cat12.9.zip" -o "$TMP_CAT/cat12.zip"
+    curl -fL "https://www.neuro.uni-jena.de/cat12/cat12_r2560.zip" -o "$TMP_CAT/cat12.zip"
     echo "[install] Extracting CAT12..."
     unzip -q "$TMP_CAT/cat12.zip" -d "$TMP_CAT/extracted"
     rm "$TMP_CAT/cat12.zip"
