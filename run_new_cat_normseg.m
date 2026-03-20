@@ -146,7 +146,7 @@ end
         iy_files = dir(fullfile(mri_dir, 'iy_*-tfl3d*ns.nii'));
 
         if isempty(y_files) || isempty(iy_files)
-            warn('CAT12 segmentation failed - deformation fields not created');
+            warning('CAT12 segmentation failed - deformation fields not created');
         end
 
         disp('CAT12 segmentation completed successfully');
@@ -362,8 +362,12 @@ function collect_surface_aal3_stats(newdir, t1wfiles)
     end
 
     if isempty(aal3_lh)
-        warning('collect_surface_aal3_stats: AAL3 block not found in XML. Available fields: %s', ...
-            strjoin(fieldnames(S.ROI), ', '));
+        if isfield(S, 'ROI')
+            warning('collect_surface_aal3_stats: AAL3 block not found in XML. Available ROI fields: %s', ...
+                strjoin(fieldnames(S.ROI), ', '));
+        else
+            warning('collect_surface_aal3_stats: ROI field not found in parsed XML.');
+        end
         return;
     end
 
