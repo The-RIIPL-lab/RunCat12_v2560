@@ -48,7 +48,7 @@ def find_cat12_dir(subject_dir):
 
 def find_native_t1(mri_dir):
     """Return the bias-corrected native-space T1 (m*.nii, excluding mwp* files)."""
-    candidates = [f for f in Path(mri_dir).glob('m*.nii')
+    candidates = [f for f in Path(mri_dir).glob('3*ns.nii')
                   if not f.name.startswith('mw')]
     return candidates[0] if candidates else None
 
