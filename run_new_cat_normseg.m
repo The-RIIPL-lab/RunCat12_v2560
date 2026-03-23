@@ -154,12 +154,6 @@ end
         disp('=== STEP 1: CAT12 processing already completed, skipping ===');
     end
 
-    % Step 1b: Collect surface-based AAL3 stats (only when surface mapping was run)
-    if opts.surface
-        disp('=== STEP 1b: Collecting surface AAL3 ROI stats ===');
-        collect_surface_aal3_stats(newdir, t1wfiles);
-    end
-
     % Step 2: Process DTI
     if dti_success
         disp('=== STEP 2: Processing DTI ===');
@@ -241,7 +235,6 @@ function run_cat12_segmentation(newdir, t1wfiles, spm_dir, run_surface)
     matlabbatch{1}.spm.tools.cat.estwrite.extopts.bb = 12;
     matlabbatch{1}.spm.tools.cat.estwrite.extopts.SRP = 22;
     matlabbatch{1}.spm.tools.cat.estwrite.extopts.ignoreErrors = 1;
-    matlabbatch{1}.spm.tools.cat.estwrite.extopts.print = 2;  % generate PDF report
     matlabbatch{1}.spm.tools.cat.estwrite.output.BIDS.BIDSno = 1;
 
     % Surface mapping — controlled by caller
@@ -316,108 +309,6 @@ function run_cat12_segmentation(newdir, t1wfiles, spm_dir, run_surface)
 
     disp('  Running CAT12 segmentation (this may take 15-30 minutes)...');
     spm_jobman('run', matlabbatch);
-end
-
-%% Surface AAL3 Stats Collection
-function collect_surface_aal3_stats(newdir, t1wfiles)
-    % Parse the CAT12 ROI XML (label/catROI_*.xml) and write a CSV containing
-    % per-ROI stats for the AAL3 atlas.  When surface=true, CAT12 adds thickness
-    % and gyrification fields alongside the standard Vgm/Vwm volumes.
-    % Output: <newdir>/surface_aal3_stats.csv
-    %
-    % XML structure produced by CAT12 r2560:
-    %   S.<atlas>.ids          — ROI integer IDs
-    %   S.<atlas>.names.item   — ROI label strings
-    %   S.<atlas>.data.Vgm     — GM volumes (and Vwm, Vcsf, thickness_mn, etc.)
-
-    label_dir = fullfile(newdir, 'label');
-    [~, t1_name] = fileparts(t1wfiles(end).name);
-
-    % CAT12 names this file catROI_<subject>.xml  (no trailing 's')
-    xml_files = dir(fullfile(label_dir, 'catROI_*.xml'));
-    if isempty(xml_files)
-        warning('collect_surface_aal3_stats: no catROI_*.xml found in %s', label_dir);
-        return;
-    end
-
-    xml_file = fullfile(xml_files(1).folder, xml_files(1).name);
-    disp(sprintf('  Reading ROI stats from: %s', xml_file));
-
-    try
-        S = cat_io_xml(xml_file);
-    catch ME
-        warning('collect_surface_aal3_stats: failed to parse XML: %s', ME.message);
-        return;
-    end
-
-    % Locate the AAL3 block — CAT12 may call it 'aal3' or 'aal'
-    aal3_block = [];
-    aal3_key   = '';
-    for candidate = {'aal3', 'aal'}
-        key = candidate{1};
-        if isfield(S, key)
-            aal3_block = S.(key);
-            aal3_key   = key;
-            break;
-        end
-    end
-
-    if isempty(aal3_block)
-        warning('collect_surface_aal3_stats: AAL3 block not found in XML. Available atlases: %s', ...
-            strjoin(fieldnames(S), ', '));
-        return;
-    end
-
-    disp(sprintf('  Found atlas block: %s', aal3_key));
-
-    % Extract ROI names for readable column headers
-    roi_names = {};
-    if isfield(aal3_block, 'names')
-        names_raw = aal3_block.names;
-        if isstruct(names_raw) && isfield(names_raw, 'item')
-            items = names_raw.item;
-            if ischar(items)
-                roi_names = {items};
-            elseif iscell(items)
-                roi_names = items;
-            end
-        elseif iscell(names_raw)
-            roi_names = names_raw;
-        end
-    end
-
-    % Build one flat row: subject_id + one column per metric x ROI
-    row = struct();
-    row.subject_id = t1_name;
-
-    if isfield(aal3_block, 'data')
-        metrics = fieldnames(aal3_block.data);
-        for m = 1:numel(metrics)
-            metric = metrics{m};
-            values = aal3_block.data.(metric);
-            if isnumeric(values)
-                for roi = 1:numel(values)
-                    if roi <= numel(roi_names)
-                        % Sanitize ROI name for use in column header
-                        rname = regexprep(roi_names{roi}, '[^a-zA-Z0-9]', '_');
-                        col = sprintf('aal3_%s_%s', metric, rname);
-                    else
-                        col = sprintf('aal3_%s_roi%d', metric, roi);
-                    end
-                    row.(col) = values(roi);
-                end
-            end
-        end
-    end
-
-    csv_path = fullfile(newdir, 'surface_aal3_stats.csv');
-    try
-        T = struct2table(row);
-        writetable(T, csv_path);
-        disp(sprintf('  AAL3 stats written to: %s  (%d columns)', csv_path, width(T)));
-    catch ME
-        warning('collect_surface_aal3_stats: failed to write CSV: %s', ME.message);
-    end
 end
 
 %% DTI Processing Function

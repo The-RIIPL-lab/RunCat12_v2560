@@ -88,16 +88,26 @@ python ./data_collection_scripts/hypothalamus_roi_qc.py --batch /path/to/project
 | `'surface'` | `false` | Enable CAT12 surface mapping and surface measures |
 | `'qc_images'` | `false` | Generate SPM registration QC PNG images in `QC_registration/` |
 
-When `'surface'` is `true`, a `surface_aal3_stats.csv` file is written to the CAT12 output folder containing per-ROI cortical thickness, gyrification, and sulcal depth for all AAL3 regions (left and right hemisphere).
+When `'surface'` is `true`, CAT12 writes surface data (cortical thickness, gyrification, sulcal depth) into its standard output folders. Surface-based ROI stats should be extracted as a separate post-processing step using the Python data collection scripts.
 
-To pass flags via a SLURM batch file, edit the MATLAB command in `create_batch_files.sh`:
+Flags can be passed directly to `create_batch_files.sh` without editing the MATLAB command:
 
 ```bash
 # Enable surface mapping
-matlab -r "addpath('<spm_dir>'); run_new_cat_normseg('$1', '$output_root', 'surface', true); exit;"
+bash ./create_batch_files.sh /path/to/SUBJECT_ID --surface true
+
+# With separate output root and surface mapping enabled
+bash ./create_batch_files.sh /path/to/SUBJECT_ID /path/to/output_root --surface true
 
 # Disable hypothalamus atlas, enable QC images
-matlab -r "addpath('<spm_dir>'); run_new_cat_normseg('$1', '$output_root', 'hypothalamus', false, 'qc_images', true); exit;"
+bash ./create_batch_files.sh /path/to/SUBJECT_ID --hypothalamus false --qc-images true
+```
+
+Flags can also be passed directly to MATLAB:
+
+```bash
+matlab -r "addpath('<spm_dir>'); run_new_cat_normseg('<subject_dir>', '', 'surface', true); exit;"
+matlab -r "addpath('<spm_dir>'); run_new_cat_normseg('<subject_dir>', '', 'hypothalamus', false, 'qc_images', true); exit;"
 ```
 
 ## Output Structure
@@ -107,7 +117,7 @@ SUBJECT_ID/
 └── nifti/
     └── cat12_v2560/
         ├── w*.nii                  ← native-space atlas labelmaps (w prefix)
-        ├── surface_aal3_stats.csv  ← surface ROI stats (if 'surface' = true)
+        ├── label/catROI_*.xml      ← CAT12 ROI stats XML (if 'surface' = true, includes cortical measures)
         ├── QC_registration/        ← registration QC images (if 'qc_images' = true)
         └── mri/
             ├── p1*.nii             ← GM probability map
