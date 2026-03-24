@@ -12,6 +12,9 @@ fi
 [ ! -d "jobs" ] && mkdir jobs
 [ ! -d "logs" ] && mkdir logs
 
+# Save subject directory before any shifts
+subject_dir="$1"
+
 # Get the base name of the input directory
 base_name=$(basename $1)
 
@@ -63,6 +66,6 @@ cat << EOF > jobs/CAT_${base_name}.sbatch
 #SBATCH -W
 module load matlab
 cd /home/richard/RunCat12 # Updated by install.sh
-matlab -r "addpath('/home/richard/RunCat12/libs/spm12/spm12'); run_new_cat_normseg('$1', '$output_root'${matlab_flags}); exit;"
+matlab -r "addpath('/home/richard/RunCat12/libs/spm12/spm12'); run_new_cat_normseg('$subject_dir', '$output_root'${matlab_flags}); exit;"
 wait
 EOF
