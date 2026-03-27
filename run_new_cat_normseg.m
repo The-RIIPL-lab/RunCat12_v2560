@@ -108,8 +108,8 @@ end
 
     % Check if processing has already been done
     mri_dir = fullfile(newdir, 'mri');
-    y_files = dir(fullfile(mri_dir, 'y_*-tfl3d116ns.nii'));
-    iy_files = dir(fullfile(mri_dir, 'iy_*-tfl3d116ns.nii'));
+    [y_files, iy_files] = find_deformation_fields(mri_dir);
+    surface_ready = surface_outputs_complete(newdir);
 
     disp('========================================');
     disp(sprintf('Subject dir: %s', base_dir));
@@ -136,17 +136,27 @@ end
     disp(sprintf('  ASL: %s', mat2str(asl_success)));
     disp('========================================');
 
-    % Step 1: CAT12 Segmentation and Normalization (if not already done)
-    if isempty(y_files)
-        disp('=== STEP 1: Running CAT12 segmentation and normalization ===');
+    % Step 1: CAT12 Segmentation and Normalization
+    % Re-run when deformation fields are missing or when surface outputs are
+    % explicitly requested but were not generated in an earlier run.
+    rerun_for_surface = opts.surface && ~surface_ready;
+    if isempty(y_files) || isempty(iy_files) || rerun_for_surface
+        if rerun_for_surface && ~isempty(y_files) && ~isempty(iy_files)
+            disp('=== STEP 1: Re-running CAT12 to generate missing surface outputs ===');
+        else
+            disp('=== STEP 1: Running CAT12 segmentation and normalization ===');
+        end
         run_cat12_segmentation(newdir, t1wfiles, spm_dir, opts.surface);
 
         % Re-check for deformation fields
-        y_files = dir(fullfile(mri_dir, 'y_*-tfl3d*.nii'));
-        iy_files = dir(fullfile(mri_dir, 'iy_*-tfl3d*ns.nii'));
+        [y_files, iy_files] = find_deformation_fields(mri_dir);
+        surface_ready = surface_outputs_complete(newdir);
 
         if isempty(y_files) || isempty(iy_files)
             warning('CAT12 segmentation failed - deformation fields not created');
+        end
+        if opts.surface && ~surface_ready
+            warning('CAT12 surface mapping requested but no surface outputs were detected');
         end
 
         disp('CAT12 segmentation completed successfully');
@@ -206,6 +216,27 @@ end
     disp('=== ALL PROCESSING COMPLETE ===');
     disp('========================================');
 
+end
+
+function [y_files, iy_files] = find_deformation_fields(mri_dir)
+    y_files = dir(fullfile(mri_dir, 'y_*.nii'));
+    iy_files = dir(fullfile(mri_dir, 'iy_*.nii'));
+end
+
+function ready = surface_outputs_complete(newdir)
+    surf_dir = fullfile(newdir, 'surf');
+    if ~exist(surf_dir, 'dir')
+        ready = false;
+        return;
+    end
+
+    surface_files = [ ...
+        dir(fullfile(surf_dir, 'lh.*')); ...
+        dir(fullfile(surf_dir, 'rh.*')); ...
+        dir(fullfile(surf_dir, '*.gii')); ...
+        dir(fullfile(surf_dir, '*.mat')) ...
+    ];
+    ready = ~isempty(surface_files);
 end
 
 %% CAT12 Segmentation Function
@@ -881,7 +912,8 @@ function print_processing_summary(newdir, mri_dir, dti_success, noddi_success, a
     if opts.surface
         disp('Surface Processing:');
         disp(sprintf('  Surface files: %s', fullfile(newdir, 'surf')));
-        disp(sprintf('  AAL3 stats CSV: %s', fullfile(newdir, 'surface_aal3_stats.csv')));
+        disp('  CAT12 may also write label/catROI_*.xml, but this repo does not parse');
+        disp('  or export cortical thickness or other surface ROI statistics.');
         disp('');
     end
 
