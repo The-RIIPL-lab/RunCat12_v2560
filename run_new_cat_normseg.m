@@ -98,6 +98,13 @@ if ~isempty(switch_files)
 	        t1wfiles = [t1wfiles; switch_files];
 end
 
+% PRISM
+switch_files = dir(fullfile([base_dir, '/nifti/'], 'P*-tfl3d*ns.nii'));
+if ~isempty(switch_files)
+	    warning('PRISM T1w image found');
+	        t1wfiles = [t1wfiles; switch_files];
+end
+
 % Error if no files found at all
 if isempty(t1wfiles)
 	    error('No T1w images found')
@@ -292,17 +299,17 @@ function run_cat12_segmentation(newdir, t1wfiles, spm_dir, run_surface)
 
     % Tissue segmentation outputs
     matlabbatch{1}.spm.tools.cat.estwrite.output.GM.native = 1;
-    matlabbatch{1}.spm.tools.cat.estwrite.output.GM.warped = 1;
+    %matlabbatch{1}.spm.tools.cat.estwrite.output.GM.warped = 1;
     matlabbatch{1}.spm.tools.cat.estwrite.output.GM.mod = 1;
     matlabbatch{1}.spm.tools.cat.estwrite.output.GM.dartel = 0;
 
     matlabbatch{1}.spm.tools.cat.estwrite.output.WM.native = 1;
-    matlabbatch{1}.spm.tools.cat.estwrite.output.WM.warped = 1;
+    %matlabbatch{1}.spm.tools.cat.estwrite.output.WM.warped = 1;
     matlabbatch{1}.spm.tools.cat.estwrite.output.WM.mod = 1;
     matlabbatch{1}.spm.tools.cat.estwrite.output.WM.dartel = 0;
 
     matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.native = 1;
-    matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.warped = 1;
+    %matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.warped = 1;
     matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.mod = 1;
     matlabbatch{1}.spm.tools.cat.estwrite.output.CSF.dartel = 0;
 
@@ -326,8 +333,8 @@ function run_cat12_segmentation(newdir, t1wfiles, spm_dir, run_surface)
     matlabbatch{1}.spm.tools.cat.estwrite.output.TPMC.mod = 0;
     matlabbatch{1}.spm.tools.cat.estwrite.output.TPMC.dartel = 0;
     matlabbatch{1}.spm.tools.cat.estwrite.output.atlas.native = 0;
-    matlabbatch{1}.spm.tools.cat.estwrite.output.label.native = 0;
-    matlabbatch{1}.spm.tools.cat.estwrite.output.label.warped = 0;
+    matlabbatch{1}.spm.tools.cat.estwrite.output.label.native = 1;
+    matlabbatch{1}.spm.tools.cat.estwrite.output.label.warped = 1;
     matlabbatch{1}.spm.tools.cat.estwrite.output.label.dartel = 0;
     matlabbatch{1}.spm.tools.cat.estwrite.output.labelnative = 1;
     matlabbatch{1}.spm.tools.cat.estwrite.output.bias.warped = 1;
